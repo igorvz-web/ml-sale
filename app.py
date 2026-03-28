@@ -2,6 +2,8 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import os
+import csv
+from io import StringIO
 
 # Инициализация Flask приложения
 # static_folder='.' — указывает, что статические файлы находятся в текущей директории
@@ -26,20 +28,104 @@ def health():
         'message': 'Сервер ML Продажник работает!'
     })
 
-# 📤 Эндпоинт для загрузки файлов (заглушка для будущей функциональности)
+# 📤 Эндпоинт для загрузки и валидации CSV файлов
 @app.route('/api/upload', methods=['POST'])
 def upload():
-    """Обработка загружаемых файлов от пользователя"""
+    """
+    Обработка загружаемых CSV файлов от пользователя.
+    Выполняет валидацию структуры файла и корректности данных.
+    """
     if 'file' not in request.files:
-        return jsonify({'error': 'Нет файла'}), 400
+        return jsonify({'error': 'Нет файла в запросе'}), 400
     
     file = request.files['file']
-    file_size = len(file.read())
+    if file.filename == '':
+        return jsonify({'error': 'Имя файла пустое'}), 400
     
-    return jsonify({
-        'message': f'Файл {file.filename} получен!',
-        'size': file_size
-    })
+    # Проверяем расширение файла
+    if not file.filename.lower().endswith('.csv'):
+        return jsonify({'error': 'Файл должен иметь расширение .csv'}), 400
+
+    try:
+        # Читаем содержимое файла
+        content = file.read().decode('utf-8-sig')  # utf-8-sig обрабатывает BOM
+        stream = StringIO(content)
+        reader = csv.DictReader(stream)
+        
+        if not reader.fieldnames:
+            return jsonify({'error': 'Файл пуст или не содержит заголовков'}), 400
+        
+        # Нормализуем имена колонок (приводим к нижнему регистру и убираем пробелы)
+        normalized_columns = {col.lower().strip(): col for col in reader.fieldnames}
+        
+        # Обязательные колонки для анализа
+        required_columns = {'date', 'product', 'revenue', 'cost'}
+        missing_columns = required_columns - set(normalized_columns.keys())
+        
+        if missing_columns:
+            return jsonify({
+                'error': f'Отсутствуют обязательные колонки: {", ".join(missing_columns)}',
+                'found_columns': list(normalized_columns.keys())
+            }), 400
+        
+        # Валидация данных в строках
+        rows_count = 0
+        errors = []
+        valid_rows = 0
+        
+        for row_num, row in enumerate(reader, start=2):  # start=2 т.к. первая строка - заголовок
+            rows_count += 1
+            
+            # Проверка даты
+            date_val = row.get(normalized_columns.get('date', ''), '').strip()
+            if not date_val:
+                errors.append(f"Строка {row_num}: пустая дата")
+                continue
+            
+            # Проверка продукта
+            product_val = row.get(normalized_columns.get('product', ''), '').strip()
+            if not product_val:
+                errors.append(f"Строка {row_num}: пустое название продукта")
+                continue
+            
+            # Проверка выручки (число)
+            revenue_val = row.get(normalized_columns.get('revenue', ''), '').strip()
+            try:
+                revenue = float(revenue_val.replace(',', '.')) if revenue_val else 0
+            except ValueError:
+                errors.append(f"Строка {row_num}: некорректное значение выручки '{revenue_val}'")
+                continue
+            
+            # Проверка затрат (число)
+            cost_val = row.get(normalized_columns.get('cost', ''), '').strip()
+            try:
+                cost = float(cost_val.replace(',', '.')) if cost_val else 0
+            except ValueError:
+                errors.append(f"Строка {row_num}: некорректное значение затрат '{cost_val}'")
+                continue
+            
+            valid_rows += 1
+        
+        # Формируем ответ
+        response = {
+            'message': f'Файл обработан: {valid_rows} валидных строк из {rows_count}',
+            'total_rows': rows_count,
+            'valid_rows': valid_rows,
+            'columns': list(normalized_columns.keys()),
+            'filename': file.filename
+        }
+        
+        if errors:
+            response['warnings'] = errors[:10]  # Показываем первые 10 ошибок
+            response['total_errors'] = len(errors)
+        
+        status_code = 200 if valid_rows > 0 else 400
+        return jsonify(response), status_code
+        
+    except UnicodeDecodeError:
+        return jsonify({'error': 'Не удалось декодировать файл. Проверьте кодировку (требуется UTF-8)'}), 400
+    except Exception as e:
+        return jsonify({'error': f'Ошибка обработки файла: {str(e)}'}), 500
 
 if __name__ == '__main__':
     # Получаем порт из переменной окружения или используем 5000 по умолчанию

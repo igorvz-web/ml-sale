@@ -3,9 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- Content Security Policy для защиты от XSS -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https: data:;">
 <title>ML Продажник Pro</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<!-- SRI хеши для проверки целостности CDN ресурсов -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js" integrity="sha256-Cj/AvSj0hVlM7HqKZLpJz9XkLnNlWbLmPmQfGnLLdKI=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" integrity="sha256-VFYMPCvMNxgCmRiRLBnYmhPLnJwJOyJcLsMfpNxrJzs=" crossorigin="anonymous"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <style>
@@ -572,6 +575,47 @@ const CHARTS={};
 let DARK_MODE=true;
 let OV_PERIOD='all';
 
+// ─── LOCALSTORAGE: Сохранение состояния фильтров и настроек ──────────────
+const STORAGE_KEY = 'ml_prodavzhnik_state';
+
+// Загрузка сохранённого состояния при старте
+function loadState(){
+  try{
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if(saved){
+      const state = JSON.parse(saved);
+      if(state.OV_PERIOD) OV_PERIOD = state.OV_PERIOD;
+      if(state.DARK_MODE !== undefined) DARK_MODE = state.DARK_MODE;
+      if(state.SAVE_FILTERS){
+        if(state.SC_MGR) window.SC_MGR = state.SC_MGR;
+        if(state.SC_PROB) window.SC_PROB = state.SC_PROB;
+        if(state.SC_TOP) window.SC_TOP = state.SC_TOP;
+        if(state.CLI_MGR) window.CLI_MGR = state.CLI_MGR;
+        if(state.CLI_TIER) window.CLI_TIER = state.CLI_TIER;
+        if(state.PROD_MGR) window.PROD_MGR = state.PROD_MGR;
+      }
+    }
+  }catch(e){console.warn('Не удалось загрузить состояние из localStorage:', e);}
+}
+
+// Сохранение текущего состояния
+function saveState(){
+  try{
+    const state = {
+      OV_PERIOD,
+      DARK_MODE,
+      SAVE_FILTERS: true,
+      SC_MGR: window.SC_MGR || '',
+      SC_PROB: window.SC_PROB || '0',
+      SC_TOP: window.SC_TOP || '',
+      CLI_MGR: window.CLI_MGR || '',
+      CLI_TIER: window.CLI_TIER || 'all',
+      PROD_MGR: window.PROD_MGR || ''
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }catch(e){console.warn('Не удалось сохранить состояние в localStorage:', e);}
+}
+
 // ─── PARSING ──────────────────────────────────────────────────────────────
 function isMan(n){return n.includes('(НБВ');}
 
@@ -766,6 +810,12 @@ function exportScoringXLSX(rows){
 async function loadAIInsights(el){
   el.innerHTML=`<div class="ai-loading"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div><span>Анализирую данные...</span></div>`;
   try{
+    // Проверка наличия данных
+    if(!DATA || DATA.length===0){
+      el.innerHTML='<span style="color:var(--mt)">Нет данных для анализа. Загрузите файл с данными.</span>';
+      return;
+    }
+    
     const hot=DATA.filter(r=>r.prob>=.7).length;
     const warm=DATA.filter(r=>r.prob>=.4&&r.prob<.7).length;
     const cold=DATA.length-hot-warm;
@@ -783,14 +833,46 @@ async function loadAIInsights(el){
 - Всего клиентов: ${DATA.length} (у ${mgrCount} менеджеров)
 - Горячих (70%+): ${hot} (${Math.round(hot/DATA.length*100)}%), тёплых: ${warm}, холодных: ${cold}
 - Общая выручка: ${fmt(rev)}, последний месяц: ${fmt(lastMRev)} vs предыдущий: ${fmt(prevMRev)}
-- Топ-менеджер: ${topMgr?topMgr[0]:'-'} (${topMgr?fmt(topMgr[1]):'-'})
-- Топ-клиент: ${topCli?topCli.name:'-'} (${topCli?fmt(topCli.total):'-'})
+- Топ-менеджер: ${topMgr?esc(topMgr[0]):'-'} (${topMgr?fmt(topMgr[1]):'-'})
+- Топ-клиент: ${topCli?esc(topCli.name):'-'} (${topCli?fmt(topCli.total):'-'})
 - Клиентов под риском оттока: ${riskCnt}`;
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    
+    // Получение API ключа из переменной окружения или input
+    const apiKey = window.ANTHROPIC_API_KEY || '';
+    
+    // Проверка наличия API ключа
+    if(!apiKey){
+      el.innerHTML='<span style="color:var(--mt)">⚠️ API ключ Anthropic не настроен. Укажите window.ANTHROPIC_API_KEY перед вызовом функции.</span>';
+      return;
+    }
+    
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    
+    // Проверка статуса ответа
+    if(!resp.ok){
+      const errData = await resp.json().catch(() => ({}));
+      throw new Error(`HTTP ${resp.status}: ${errData.error?.message || resp.statusText}`);
+    }
+    
     const d=await resp.json();
     const txt=(d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
     el.innerHTML=txt?txt.replace(/\n/g,'<br>'):'<span style="color:var(--mt)">Нет данных для анализа.</span>';
-  }catch(e){el.innerHTML='<span style="color:var(--mt)">Не удалось загрузить инсайты.</span>';}
+  }catch(e){
+    console.error('AI Insights error:', e);
+    el.innerHTML=`<span style="color:var(--mt)">Не удалось загрузить инсайты: ${esc(e.message)}</span>`;
+  }
 }
 
 // ─── SIDEBAR ──────────────────────────────────────────────────────────────
@@ -882,13 +964,29 @@ function initUpload(){
   function loadFile(f){
     if(!f)return;
     const ext=f.name.split('.').pop().toLowerCase();
+    
+    // Проверка размера файла (максимум 50MB)
+    const MAX_SIZE = 50 * 1024 * 1024;
+    if(f.size > MAX_SIZE){
+      st.textContent='❌ Файл слишком большой. Максимум 50MB';
+      return;
+    }
+    
     st.textContent='⏳ Читаем файл...';
 
     if(ext==='csv'){
       const r=new FileReader();
       r.onload=e=>{st.textContent='⚙️ Разбираем данные...';
         setTimeout(()=>{
-          try{const raw=parseCSV(e.target.result);processRaw(raw,st);}
+          try{
+            const raw=parseCSV(e.target.result);
+            // Валидация данных после парсинга
+            if(validateRawData(raw)){
+              processRaw(raw,st);
+            } else {
+              st.textContent='❌ Неверный формат данных. Проверьте структуру CSV файла.';
+            }
+          }
           catch(err){st.textContent='❌ Ошибка: '+err.message;}
         },60);};
       r.readAsText(f,'windows-1251');
@@ -896,13 +994,39 @@ function initUpload(){
       const r=new FileReader();
       r.onload=e=>{st.textContent='⚙️ Разбираем XLSX...';
         setTimeout(()=>{
-          try{const raw=parseXLSX(new Uint8Array(e.target.result));processRaw(raw,st);}
+          try{
+            const raw=parseXLSX(new Uint8Array(e.target.result));
+            // Валидация данных после парсинга
+            if(validateRawData(raw)){
+              processRaw(raw,st);
+            } else {
+              st.textContent='❌ Неверный формат данных. Проверьте структуру XLSX файла.';
+            }
+          }
           catch(err){st.textContent='❌ Ошибка: '+err.message;}
         },60);};
       r.readAsArrayBuffer(f);
     } else {
       st.textContent='❌ Неподдерживаемый формат. Нужен .xlsx или .csv';
     }
+  }
+
+  // Валидация сырых данных - проверка минимальной структуры
+  function validateRawData(raw){
+    if(!raw || !Array.isArray(raw) || raw.length < 2) return false;
+    // Проверяем, что есть хотя бы один клиент с данными
+    let hasClient = false;
+    for(const row of raw){
+      if(row && Array.isArray(row) && row.length >= 15){
+        // Проверяем наличие числовых данных в колонках месяцев
+        const hasNumeric = COL.some(ci => ci < row.length && !isNaN(parseFloat(row[ci])));
+        if(hasClient && hasNumeric) return true;
+        if(row[0] && String(row[0]).trim() && !isMan(String(row[0])) && !isProd(String(row[0]))){
+          hasClient = true;
+        }
+      }
+    }
+    return hasClient;
   }
 
   function processRaw(raw,st){
@@ -1011,7 +1135,7 @@ function drawScoringTable(){
   tw.innerHTML=`<table><thead><tr>
     <th style="width:36px">#</th>
     ${cols.map(c=>`<th id="th-${c.k}" class="${SC_KEY===c.k?(SC_ASC?'sort-asc':'sort-desc'):''}">${c.lb}</th>`).join('')}
-  </tr></thead><tbody>${shown.map((r,i)=>`<tr style="cursor:pointer" data-idx="${i}">
+  </tr></thead><tbody>${shown.map((r,i)=>`<tr style="cursor:pointer" data-rid="${i}">
     <td class="td-mono" style="color:var(--mt)">${i+1}</td>
     <td class="td-name" title="${esc(r.name)}">${esc(r.name)}</td>
     <td class="td-mgr">${esc(r.mgr)}</td>
@@ -1023,7 +1147,15 @@ function drawScoringTable(){
     <td class="td-mono">${nextTxt(r.nd)}</td>
   </tr>`).join('')}</tbody></table>`;
   cols.forEach(c=>document.getElementById('th-'+c.k).addEventListener('click',()=>srtTh(c.k)));
-  tw.querySelectorAll('tbody tr').forEach((tr,i)=>tr.addEventListener('click',()=>showClientModal(shown[i])));
+  // Используем event.target.closest и dataset для корректной работы после фильтрации/сортировки
+  tw.querySelectorAll('tbody tr').forEach(tr=>{
+    tr.addEventListener('click',function(){
+      const idx = parseInt(this.getAttribute('data-rid'), 10);
+      if(!isNaN(idx) && shown[idx]){
+        showClientModal(shown[idx]);
+      }
+    });
+  });
 }
 
 // ─── MANAGERS ─────────────────────────────────────────────────────────────
@@ -1111,7 +1243,7 @@ function drawClients(){
   if(!rows.length){el.innerHTML='<div class="no-data">Нет клиентов по фильтрам</div>';return;}
   el.innerHTML=`<div class="cgrid">${shown.map((r,i)=>{
     const p=pct(r.prob),col=p>=70?'var(--hot)':p>=40?'var(--warm)':'var(--mt)';
-    return`<div class="clic" style="cursor:pointer" data-cli="${i}">
+    return`<div class="clic" style="cursor:pointer" data-rid="${i}">
       <div class="clic-nm" title="${esc(r.name)}">${esc(r.name)}</div>
       <div class="clic-mgr">${esc(r.mgr)}</div>
       <div class="clic-bar"><div style="height:5px;width:${p}%;background:${col};border-radius:3px"></div></div>
@@ -1128,7 +1260,15 @@ function drawClients(){
     </div>`;}).join('')}
     ${rows.length>120?`<div style="text-align:center;padding:20px;color:var(--mt);font-size:12px;grid-column:1/-1">Показано 120 из ${rows.length}</div>`:''}
   </div>`;
-  el.querySelectorAll('.clic[data-cli]').forEach((card,i)=>card.addEventListener('click',()=>showClientModal(shown[i])));
+  // Используем this.getAttribute для корректной работы после фильтрации/сортировки
+  el.querySelectorAll('.clic[data-rid]').forEach(card=>{
+    card.addEventListener('click',function(){
+      const idx = parseInt(this.getAttribute('data-rid'), 10);
+      if(!isNaN(idx) && shown[idx]){
+        showClientModal(shown[idx]);
+      }
+    });
+  });
 }
 
 // ─── PRODUCTS ─────────────────────────────────────────────────────────────
