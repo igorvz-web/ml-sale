@@ -1063,6 +1063,9 @@ function toast(msg,type=''){
 function showClientModal(r){
   const ov=document.createElement('div');ov.className='modal-ov';
   const p=pct(r.prob),col=p>=70?'var(--hot)':p>=40?'var(--warm)':'var(--mt)';
+  const mlProb = Math.round((r.mlProbability||0)*100);
+  const mlPred = r.mlPrediction||0;
+  const expectedRev = mlPred * (r.mlProbability||0);
   const lastBuy=r.rec>=0?ML[r.rec]:'—';
   const prods=Object.entries(r.prod).sort((a,b)=>b[1]-a[1]).slice(0,6);
   ov.innerHTML=`<div class="modal">
@@ -1070,10 +1073,18 @@ function showClientModal(r){
     <div class="modal-h">${esc(r.name)}</div>
     <div class="modal-sub">${esc(r.mgr)} &nbsp;·&nbsp; ${r.tg||'—'}</div>
     <div class="modal-kpis">
-      <div class="mkpi"><div class="mkpi-l">Вероятность</div><div class="mkpi-v" style="color:${col}">${p}%</div></div>
+      <div class="mkpi"><div class="mkpi-l">Вероятность (RFM)</div><div class="mkpi-v" style="color:${col}">${p}%</div></div>
       <div class="mkpi"><div class="mkpi-l">Выручка</div><div class="mkpi-v">${fmt(r.total)}</div></div>
       <div class="mkpi"><div class="mkpi-l">Посл. покупка</div><div class="mkpi-v">${lastBuy}</div></div>
       <div class="mkpi"><div class="mkpi-l">Следующая</div><div class="mkpi-v">${nextTxt(r.nd)}</div></div>
+    </div>
+    <div class="cc" style="margin-bottom:14px;background:rgba(79,142,247,.08);border:1px solid rgba(79,142,247,.2);border-radius:10px;padding:12px;">
+      <div class="cc-ti" style="color:var(--acc)">🤖 ML Прогноз</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px;">
+        <div style="text-align:center"><div style="font-size:9px;color:var(--mt);text-transform:uppercase">Вероятность (ML)</div><div style="font-family:var(--fm);font-size:16px;font-weight:600;color:var(--acc)">${mlProb}%</div></div>
+        <div style="text-align:center"><div style="font-size:9px;color:var(--mt);text-transform:uppercase">Прогноз суммы</div><div style="font-family:var(--fm);font-size:16px;font-weight:600;color:var(--cy)">${fmt(mlPred)}</div></div>
+        <div style="text-align:center"><div style="font-size:9px;color:var(--mt);text-transform:uppercase">Ожид. выручка</div><div style="font-family:var(--fm);font-size:16px;font-weight:600;color:var(--gr)">${fmt(expectedRev)}</div></div>
+      </div>
     </div>
     <div class="cc" style="margin-bottom:14px"><div class="cc-ti">Динамика продаж <span>руб.</span></div><div class="ch-wrap" style="height:170px"><canvas id="mc-chart"></canvas></div></div>
     ${prods.length?`<div class="cc"><div class="cc-ti">Товарные группы <span>топ-6</span></div>
@@ -1402,6 +1413,11 @@ function renderScoring(m){
   
   m.innerHTML=`<div class="pg">
     <div class="pg-hd"><div class="pg-ti">ML Скоринг</div><div class="pg-su" id="sc-sub">RFM + ML модель · Прогноз выручки: ${fmt(totalMLForecast)}</div></div>
+    <div class="cg22" style="margin-bottom:14px">
+      <div class="cc"><div class="cc-ti">📈 Общий прогноз выручки (ML)</div><div class="skp-v" style="color:var(--gr);font-size:24px;text-align:center;padding-top:20px">${fmt(totalMLForecast)}</div><div class="skp-s" style="text-align:center">Сумма всех прогнозов × вероятность</div></div>
+      <div class="cc"><div class="cc-ti">🎯 Топ-5 по вероятности покупки</div><div id="top-prob-wrap" style="padding:10px;overflow-y:auto;max-height:180px"></div></div>
+      <div class="cc"><div class="cc-ti">💰 Топ-5 по ожидаемой выручке</div><div id="top-rev-wrap" style="padding:10px;overflow-y:auto;max-height:180px"></div></div>
+    </div>
     <div class="tw">
       <div class="tf">
         <select id="sc-mgr"><option value="">Все менеджеры</option>${mgrs.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('')}</select>
@@ -1433,28 +1449,45 @@ function drawScoringTable(){
   const topByProb = [...shown].sort((a,b)=>b.mlProbability-a.mlProbability).slice(0,5);
   const topByRevenue = [...shown].sort((a,b)=>(b.mlPrediction*b.mlProbability)-(a.mlPrediction*a.mlProbability)).slice(0,5);
   
-  document.getElementById('sc-sub').textContent=`${shown.length} клиентов · RFM + ML модель · Топ прогноз: ${fmt(topByRevenue.reduce((s,r)=>s+r.mlPrediction*r.mlProbability,0))}`;
+  // Отрисовка топ-листов
+  document.getElementById('top-prob-wrap').innerHTML = topByProb.map((r,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(27,42,61,.5)">
+    <div style="width:18px;height:18px;border-radius:50%;background:${i===0?'var(--hot)':i===1?'var(--warm)':'var(--mt)'};color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;font-weight:700">${i+1}</div>
+    <div style="flex:1;font-size:11px;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.name)}">${esc(r.name)}</div>
+    <div style="font-family:var(--fm);font-size:11px;font-weight:600;color:var(--acc)">${Math.round((r.mlProbability||0)*100)}%</div>
+  </div>`).join('') || '<div style="color:var(--mt);font-size:11px;text-align:center;padding:20px">Нет данных</div>';
+  
+  document.getElementById('top-rev-wrap').innerHTML = topByRevenue.map((r,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(27,42,61,.5)">
+    <div style="width:18px;height:18px;border-radius:50%;background:${i===0?'var(--gr)':i===1?'var(--cy)':'var(--pu)'};color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;font-weight:700">${i+1}</div>
+    <div style="flex:1;font-size:11px;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.name)}">${esc(r.name)}</div>
+    <div style="font-family:var(--fm);font-size:11px;font-weight:600;color:var(--gr)">${fmt((r.mlPrediction||0)*(r.mlProbability||0))}</div>
+  </div>`).join('') || '<div style="color:var(--mt);font-size:11px;text-align:center;padding:20px">Нет данных</div>';
+  
+  document.getElementById('sc-sub').textContent=`${shown.length} клиентов · RFM + ML модель`;
   const cols=[
-    {k:'name',lb:'Клиент'},{k:'mgr',lb:'Менеджер'},{k:'prob',lb:'Вероятность'},
-    {k:'total',lb:'Выручка'},{k:'rec',lb:'Посл. покупка'},{k:'tr',lb:'Тренд'},
-    {k:'tg',lb:'Топ группа'},{k:'nd',lb:'Следующая'}];
+    {k:'name',lb:'Клиент'},{k:'mgr',lb:'Менеджер'},
+    {k:'mlProbability',lb:'Вероятность (ML)'},{k:'mlPrediction',lb:'Прогноз суммы'},
+    {k:'expectedRevenue',lb:'Ожид. выручка'},
+    {k:'prob',lb:'RFM %'},{k:'total',lb:'Выручка'},{k:'rec',lb:'Посл. покупка'},{k:'tr',lb:'Тренд'}];
   const srtTh=k=>{if(SC_KEY===k)SC_ASC=!SC_ASC;else{SC_KEY=k;SC_ASC=false;}drawScoringTable();};
   const tw=document.getElementById('sc-table-wrap');
   if(!shown.length){tw.innerHTML='<div class="no-data">Нет клиентов по выбранным фильтрам</div>';return;}
   tw.innerHTML=`<table><thead><tr>
     <th style="width:36px">#</th>
     ${cols.map(c=>`<th id="th-${c.k}" class="${SC_KEY===c.k?(SC_ASC?'sort-asc':'sort-desc'):''}">${c.lb}</th>`).join('')}
-  </tr></thead><tbody>${shown.map((r,i)=>`<tr style="cursor:pointer" data-rid="${i}">
+  </tr></thead><tbody>${shown.map((r,i)=>{
+    const expectedRev = (r.mlPrediction || 0) * (r.mlProbability || 0);
+    return `<tr style="cursor:pointer" data-rid="${i}">
     <td class="td-mono" style="color:var(--mt)">${i+1}</td>
     <td class="td-name" title="${esc(r.name)}">${esc(r.name)}</td>
     <td class="td-mgr">${esc(r.mgr)}</td>
+    <td><div class="pb-wrap"><div class="pb-bg"><div class="pb-fill" style="width:${Math.round((r.mlProbability||0)*100)}%"></div></div></div><span class="pb-val">${Math.round((r.mlProbability||0)*100)}%</span></td>
+    <td class="td-mono">${fmt(r.mlPrediction||0)}</td>
+    <td class="td-mono" style="color:var(--acc)">${fmt(expectedRev)}</td>
     <td>${pbHtml(r.prob)}</td>
     <td class="td-mono">${fmt(r.total)}</td>
     <td class="td-mono">${r.rec>=0?ML[r.rec]:'—'}</td>
     <td>${trendHtml(r.tr)}</td>
-    <td class="td-grp" title="${esc(r.tg)}">${esc(r.tg)}</td>
-    <td class="td-mono">${nextTxt(r.nd)}</td>
-  </tr>`).join('')}</tbody></table>`;
+  </tr>`;}).join('')}</tbody></table>`;
   cols.forEach(c=>document.getElementById('th-'+c.k).addEventListener('click',()=>srtTh(c.k)));
   // Используем event.target.closest и dataset для корректной работы после фильтрации/сортировки
   tw.querySelectorAll('tbody tr').forEach(tr=>{
