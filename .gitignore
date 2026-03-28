@@ -1,7 +1,14 @@
 ```
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
 # Logs and temp files
 *.log
-server.log
+*.tmp
+*.swp
 
 # Environment
 .env
@@ -13,62 +20,12 @@ server.log
 .idea/
 
 # Dependencies
-node_modules/
-venv/
 .venv/
-__pycache__/
+venv/
+node_modules/
 
-# Compiled and build artifacts
-*.pyc
-*.pyo
-*.pyd
-*.so
-*.dylib
-*.dll
-*.exe
-*.o
-*.obj
-*.a
-*.lib
-*.out
-*.class
-*.jar
-*.war
-*.zip
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.gz
-*.bz2
-*.xz
-*.7z
-*.rar
-*.zst
-*.lz4
-*.lzh
-*.cab
-*.arj
-*.rpm
-*.deb
-*.Z
-*.lz
-*.lzo
-
-# Build directories
+# Build artifacts
 dist/
 build/
 target/
-.coverage
-coverage/
-htmlcov/
-.mypy_cache/
-.pytest_cache/
-.gradle/
-
-# System files
-.DS_Store
-Thumbs.db
-*.tmp
-*.swp
-*.swo
 ```

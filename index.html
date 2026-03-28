@@ -725,18 +725,29 @@ function compute(raw){
   const act=raw.filter(c=>c.mo.reduce((a,b)=>a+b,0)>0);
   const tots=act.map(c=>c.mo.reduce((a,b)=>a+b,0));
   const mx=Math.max(...tots,1);
+  
+  // Обучение ML модели на данных
+  const mlMetrics = ML_ENGINE.train(act);
+  console.log('ML метрики:', mlMetrics);
+  
   return act.map((c,i)=>{
     const m=c.mo,tot=tots[i],freq=m.filter(v=>v>0).length;
     let rec=-1;for(let j=m.length-1;j>=0;j--){if(m[j]>0){rec=j;break;}}
     const l3=m.slice(-3).reduce((a,b)=>a+b,0),p3=m.slice(-6,-3).reduce((a,b)=>a+b,0);
     const tr=p3>0?(l3-p3)/p3:(l3>0?1:0);
-    const raw2=Math.min(100,Math.max(0,(rec/14)*35+(freq/15)*30+Math.max(0,Math.min(20,tr*20+10))+(tot/mx)*15));
-    const prob=raw2/100;
+    
+    // Используем ML предсказания вместо эвристической формулы
+    const mlPred = ML_ENGINE.predict(c);
+    const prob = mlPred.probability;
+    const mlProbability = prob;
+    const mlPrediction = mlPred.prediction;
+    
     const avgI=freq>1?Math.round(15/freq):2;
     const nd=Math.max(0,Math.round((avgI-(14-rec))*30));
     const te=Object.entries(c.prod).sort((a,b)=>b[1]-a[1])[0];
     return{name:c.name,mgr:c.mgr,prob,total:tot,mo:m,rec,tr,nd,
-      tg:te?te[0]:(c._lg||'Нет данных'),prod:c.prod};
+      tg:te?te[0]:(c._lg||'Нет данных'),prod:c.prod,
+      mlProbability: mlProbability, mlPrediction: mlPrediction};
   }).sort((a,b)=>b.prob-a.prob);
 }
 function fmt(v){if(v>=1e6)return(v/1e6).toFixed(1)+' млн';if(v>=1e3)return(v/1e3).toFixed(0)+' тыс';return Math.round(v)+'';}
@@ -752,6 +763,294 @@ function pbHtml(prob){
   return`<span class="pbar-wrap"><span class="pbar-fill" style="width:${p}%;background:${col}"></span></span><span class="badge ${bclass(prob)}">${p}%</span>`;}
 function nextTxt(nd){return nd===0?'⚡ Сейчас':'≈'+nd+' дн.';}
 function destroyChart(id){if(CHARTS[id]){CHARTS[id].destroy();delete CHARTS[id];}}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ─── ML ENGINE: Classification + Regression ───────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Простая реализация логистической регрессии для классификации
+ * Предсказывает вероятность покупки (0-1)
+ */
+const ML_ENGINE = {
+  // Веса модели классификации (вероятность покупки)
+  clfWeights: null,
+  clfBias: 0,
+  
+  // Веса модели регрессии (сумма покупки)
+  regWeights: null,
+  regBias: 0,
+  
+  // Статистика для нормализации признаков
+  featureStats: null,
+  
+  /**
+   * Обучение моделей на исторических данных
+   * @param {Array} clients - массив клиентов с историей покупок
+   * @returns {Object} метрики качества моделей
+   */
+  train: function(clients) {
+    const startTime = performance.now();
+    
+    // Извлечение признаков и таргетов
+    const features = [];
+    const clfTargets = []; // 1 = купил, 0 = не купил
+    const regTargets = []; // сумма следующей покупки
+    
+    clients.forEach(client => {
+      const feats = this.extractFeatures(client);
+      if (feats) {
+        features.push(feats);
+        // Таргет для классификации: купил ли в последнем месяце
+        const lastMonthIdx = client.mo.length - 1;
+        const prevMonths = client.mo.slice(0, lastMonthIdx);
+        const hadPurchaseBefore = prevMonths.some(v => v > 0);
+        const purchasedLast = (client.mo[lastMonthIdx] || 0) > 0;
+        
+        clfTargets.push(purchasedLast && hadPurchaseBefore ? 1 : 0);
+        
+        // Таргет для регрессии: сумма последней покупки (если была)
+        regTargets.push(purchasedLast ? client.mo[lastMonthIdx] : 0);
+      }
+    });
+    
+    if (features.length < 10) {
+      console.warn('Недостаточно данных для обучения ML (< 10 клиентов)');
+      return { accuracy: 0, mae: 0, trainingTime: 0 };
+    }
+    
+    // Нормализация признаков
+    this.featureStats = this.computeFeatureStats(features);
+    const normalizedFeatures = features.map(f => this.normalizeFeatures(f, this.featureStats));
+    
+    // Обучение модели классификации (логистическая регрессия)
+    this.clfWeights = new Array(normalizedFeatures[0].length).fill(0);
+    this.clfBias = 0;
+    this.trainLogisticRegression(normalizedFeatures, clfTargets, 0.1, 100);
+    
+    // Обучение модели регрессии (линейная регрессия)
+    this.regWeights = new Array(normalizedFeatures[0].length).fill(0);
+    this.regBias = 0;
+    this.trainLinearRegression(normalizedFeatures, regTargets, 0.01, 200);
+    
+    // Оценка качества
+    const predictions = normalizedFeatures.map(f => this.predict(f));
+    const clfAccuracy = this.evaluateClassification(predictions, clfTargets);
+    const regMAE = this.evaluateRegression(predictions, regTargets);
+    
+    const trainingTime = performance.now() - startTime;
+    
+    console.log(`ML обучение завершено за ${trainingTime.toFixed(2)}мс`);
+    console.log(`Точность классификации: ${(clfAccuracy * 100).toFixed(1)}%`);
+    console.log(`Средняя ошибка регрессии (MAE): ${regMAE.toFixed(2)}`);
+    
+    return {
+      accuracy: clfAccuracy,
+      mae: regMAE,
+      trainingTime: trainingTime,
+      samplesCount: features.length
+    };
+  },
+  
+  /**
+   * Извлечение признаков из клиента
+   * @param {Object} client - объект клиента
+   * @returns {Array|null} вектор признаков или null если недостаточно данных
+   */
+  extractFeatures: function(client) {
+    // Recency: давность последней покупки (в месяцах от конца)
+    let recency = 0;
+    for (let i = client.mo.length - 1; i >= 0; i--) {
+      if (client.mo[i] > 0) {
+        recency = client.mo.length - 1 - i;
+        break;
+      }
+    }
+    
+    // Frequency: количество месяцев с покупками
+    const frequency = client.mo.filter(v => v > 0).length;
+    
+    // Monetary: общая сумма покупок
+    const monetary = client.total || client.mo.reduce((a, b) => a + b, 0);
+    
+    // Trend: рост/падение (сравнение последних 3 мес с предыдущими 3)
+    const recent3 = client.mo.slice(-3).reduce((a, b) => a + b, 0);
+    const prev3 = client.mo.slice(-6, -3).reduce((a, b) => a + b, 0);
+    const trend = prev3 > 0 ? (recent3 - prev3) / prev3 : 0;
+    
+    // Avg purchase: средний чек
+    const avgPurchase = frequency > 0 ? monetary / frequency : 0;
+    
+    // Consistency: стабильность покупок (std dev)
+    const activeMonths = client.mo.filter(v => v > 0);
+    let consistency = 0;
+    if (activeMonths.length > 1) {
+      const mean = activeMonths.reduce((a, b) => a + b, 0) / activeMonths.length;
+      const variance = activeMonths.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / activeMonths.length;
+      consistency = 1 / (1 + Math.sqrt(variance)); // обратная величина от std dev
+    }
+    
+    // Возвращаем вектор признаков
+    return [recency, frequency, monetary, trend, avgPurchase, consistency];
+  },
+  
+  /**
+   * Вычисление статистики признаков для нормализации
+   */
+  computeFeatureStats: function(features) {
+    const n = features.length;
+    const dim = features[0].length;
+    const stats = { min: [], max: [], mean: [], std: [] };
+    
+    for (let j = 0; j < dim; j++) {
+      const values = features.map(f => f[j]);
+      stats.min[j] = Math.min(...values);
+      stats.max[j] = Math.max(...values);
+      stats.mean[j] = values.reduce((a, b) => a + b, 0) / n;
+      const variance = values.reduce((s, v) => s + Math.pow(v - stats.mean[j], 2), 0) / n;
+      stats.std[j] = Math.sqrt(variance) || 1;
+    }
+    
+    return stats;
+  },
+  
+  /**
+   * Нормализация признаков (Z-score normalization)
+   */
+  normalizeFeatures: function(features, stats) {
+    return features.map((v, j) => {
+      const range = stats.max[j] - stats.min[j];
+      return range > 0 ? (v - stats.min[j]) / range : 0; // Min-Max нормализация
+    });
+  },
+  
+  /**
+   * Обучение логистической регрессии (градиентный спуск)
+   */
+  trainLogisticRegression: function(X, y, learningRate, iterations) {
+    const n = X.length;
+    const dim = X[0].length;
+    
+    for (let iter = 0; iter < iterations; iter++) {
+      const gradW = new Array(dim).fill(0);
+      let gradB = 0;
+      
+      for (let i = 0; i < n; i++) {
+        const z = this.dotProduct(X[i], this.clfWeights) + this.clfBias;
+        const pred = 1 / (1 + Math.exp(-z)); // sigmoid
+        const error = pred - y[i];
+        
+        for (let j = 0; j < dim; j++) {
+          gradW[j] += error * X[i][j];
+        }
+        gradB += error;
+      }
+      
+      // Обновление весов
+      for (let j = 0; j < dim; j++) {
+        this.clfWeights[j] -= learningRate * gradW[j] / n;
+      }
+      this.clfBias -= learningRate * gradB / n;
+    }
+  },
+  
+  /**
+   * Обучение линейной регрессии (градиентный спуск)
+   */
+  trainLinearRegression: function(X, y, learningRate, iterations) {
+    const n = X.length;
+    const dim = X[0].length;
+    
+    for (let iter = 0; iter < iterations; iter++) {
+      const gradW = new Array(dim).fill(0);
+      let gradB = 0;
+      
+      for (let i = 0; i < n; i++) {
+        const pred = this.dotProduct(X[i], this.regWeights) + this.regBias;
+        const error = pred - y[i];
+        
+        for (let j = 0; j < dim; j++) {
+          gradW[j] += error * X[i][j];
+        }
+        gradB += error;
+      }
+      
+      // Обновление весов
+      for (let j = 0; j < dim; j++) {
+        this.regWeights[j] -= learningRate * gradW[j] / n;
+      }
+      this.regBias -= learningRate * gradB / n;
+    }
+  },
+  
+  /**
+   * Предсказание для одного клиента
+   * @param {Object} client - объект клиента
+   * @returns {Object} { probability: 0-1, prediction: сумма }
+   */
+  predict: function(client) {
+    if (!this.clfWeights || !this.regWeights) {
+      // Если модель не обучена, возвращаем дефолтные значения
+      return { probability: 0.5, prediction: client.total / 12 };
+    }
+    
+    const features = this.extractFeatures(client);
+    if (!features) {
+      return { probability: 0.5, prediction: 0 };
+    }
+    
+    const normalized = this.normalizeFeatures(features, this.featureStats);
+    
+    // Классификация: вероятность покупки
+    const zClf = this.dotProduct(normalized, this.clfWeights) + this.clfBias;
+    const probability = 1 / (1 + Math.exp(-zClf)); // sigmoid
+    
+    // Регрессия: прогноз суммы
+    let prediction = this.dotProduct(normalized, this.regWeights) + this.regBias;
+    prediction = Math.max(0, prediction); // не может быть отрицательной
+    
+    // Денормализация предсказания суммы
+    if (this.featureStats) {
+      const monetaryIdx = 2; // индекс monetary в признаках
+      const range = this.featureStats.max[monetaryIdx] - this.featureStats.min[monetaryIdx];
+      if (range > 0) {
+        prediction = prediction * range + this.featureStats.min[monetaryIdx];
+      }
+    }
+    
+    return {
+      probability: Math.min(1, Math.max(0, probability)),
+      prediction: Math.round(prediction)
+    };
+  },
+  
+  /**
+   * Скалярное произведение векторов
+   */
+  dotProduct: function(a, b) {
+    return a.reduce((sum, val, i) => sum + val * b[i], 0);
+  },
+  
+  /**
+   * Оценка качества классификации (accuracy)
+   */
+  evaluateClassification: function(predictions, targets) {
+    let correct = 0;
+    for (let i = 0; i < predictions.length; i++) {
+      const predClass = predictions[i].probability >= 0.5 ? 1 : 0;
+      if (predClass === targets[i]) correct++;
+    }
+    return correct / predictions.length;
+  },
+  
+  /**
+   * Оценка качества регрессии (MAE - Mean Absolute Error)
+   */
+  evaluateRegression: function(predictions, targets) {
+    const errors = predictions.map((p, i) => Math.abs(p.prediction - targets[i]));
+    return errors.reduce((a, b) => a + b, 0) / errors.length;
+  }
+};
 
 // ─── TOAST ────────────────────────────────────────────────────────────────
 function toast(msg,type=''){
@@ -795,13 +1094,14 @@ function showClientModal(r){
 
 // ─── EXPORT XLSX ──────────────────────────────────────────────────────────
 function exportScoringXLSX(rows){
-  const hdr=['#','Клиент','Менеджер','Вероятность %','Выручка ₽','Посл. покупка','Тренд','Топ группа','Следующая покупка'];
+  const hdr=['#','Клиент','Менеджер','Вероятность %','Прогноз суммы ₽','Ожидаемая выручка ₽','Выручка ₽','Посл. покупка','Тренд','Топ группа','Следующая покупка'];
   const data=[hdr,...rows.map((r,i)=>[
-    i+1,r.name,r.mgr,pct(r.prob),r.total,r.rec>=0?ML[r.rec]:'—',
+    i+1,r.name,r.mgr,pct(r.mlProbability||r.prob),r.mlPrediction||Math.round(r.total/12),
+    Math.round((r.mlPrediction||0)*(r.mlProbability||r.prob)),r.total,r.rec>=0?ML[r.rec]:'—',
     r.tr>0.1?`▲ ${Math.round(r.tr*100)}%`:r.tr<-0.1?`▼ ${Math.round(Math.abs(r.tr)*100)}%`:'→ стабильно',
     r.tg,nextTxt(r.nd)])];
   const ws=XLSX.utils.aoa_to_sheet(data);
-  ws['!cols']=[{wch:4},{wch:40},{wch:22},{wch:14},{wch:14},{wch:12},{wch:12},{wch:28},{wch:16}];
+  ws['!cols']=[{wch:4},{wch:40},{wch:22},{wch:14},{wch:16},{wch:18},{wch:14},{wch:12},{wch:12},{wch:28},{wch:16}];
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'ML Скоринг');
   XLSX.writeFile(wb,'ML_Скоринг_'+new Date().toLocaleDateString('ru').replace(/\./g,'-')+'.xlsx');
   toast('✅ Экспорт выполнен','ok');}
@@ -1096,8 +1396,12 @@ function renderOverview(m){
 let SC_MGR='',SC_PROB='0',SC_TOP='50',SC_SRCH='',SC_KEY='prob',SC_ASC=false;
 function renderScoring(m){
   const mgrs=[...new Set(DATA.map(r=>r.mgr))].sort();
+  
+  // Расчет общего прогноза выручки на основе ML
+  const totalMLForecast = DATA.reduce((sum, r) => sum + (r.mlPrediction * r.mlProbability), 0);
+  
   m.innerHTML=`<div class="pg">
-    <div class="pg-hd"><div class="pg-ti">ML Скоринг</div><div class="pg-su" id="sc-sub">RFM + тренд-модель</div></div>
+    <div class="pg-hd"><div class="pg-ti">ML Скоринг</div><div class="pg-su" id="sc-sub">RFM + ML модель · Прогноз выручки: ${fmt(totalMLForecast)}</div></div>
     <div class="tw">
       <div class="tf">
         <select id="sc-mgr"><option value="">Все менеджеры</option>${mgrs.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('')}</select>
@@ -1124,7 +1428,12 @@ function drawScoringTable(){
   let rows=DATA.filter(r=>(!SC_MGR||r.mgr===SC_MGR)&&r.prob>=parseFloat(SC_PROB)&&(!SC_SRCH||r.name.toLowerCase().includes(SC_SRCH.toLowerCase())));
   rows.sort((a,b)=>{let va=a[SC_KEY],vb=b[SC_KEY];if(typeof va==='string'){va=va.toLowerCase();vb=vb.toLowerCase();}return SC_ASC?(va>vb?1:-1):(va<vb?1:-1);});
   const top=parseInt(SC_TOP)||0;const shown=top>0?rows.slice(0,top):rows;
-  document.getElementById('sc-sub').textContent=`${shown.length} клиентов · RFM + тренд-модель`;
+  
+  // Топ клиентов по вероятности и ожидаемой выручке
+  const topByProb = [...shown].sort((a,b)=>b.mlProbability-a.mlProbability).slice(0,5);
+  const topByRevenue = [...shown].sort((a,b)=>(b.mlPrediction*b.mlProbability)-(a.mlPrediction*a.mlProbability)).slice(0,5);
+  
+  document.getElementById('sc-sub').textContent=`${shown.length} клиентов · RFM + ML модель · Топ прогноз: ${fmt(topByRevenue.reduce((s,r)=>s+r.mlPrediction*r.mlProbability,0))}`;
   const cols=[
     {k:'name',lb:'Клиент'},{k:'mgr',lb:'Менеджер'},{k:'prob',lb:'Вероятность'},
     {k:'total',lb:'Выручка'},{k:'rec',lb:'Посл. покупка'},{k:'tr',lb:'Тренд'},
