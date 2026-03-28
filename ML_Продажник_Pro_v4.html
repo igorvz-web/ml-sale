@@ -21,6 +21,12 @@
   --gr:#10b981;--gr-d:rgba(16,185,129,.13);
   --pu:#8b5cf6;--pu-d:rgba(139,92,246,.15);
   --mt:#56709a;--tx:#c8daf0;--tx2:#7a94bb;--wh:#e8f1fb;
+
+  --sb-bg:linear-gradient(180deg,#0e1726 0%,#091422 100%);
+  --sb-bord:rgba(255,255,255,.07);
+  --sb-tx:rgba(195,215,240,.7);
+  --sb-txh:#e8f1fb;
+  --sb-hi:rgba(255,255,255,.08);
   --fh:'Syne',sans-serif;--fm:'IBM Plex Mono',monospace;--fb:'DM Sans',sans-serif;
   --rad:13px;--rad-sm:9px;
   --shadow:0 4px 24px rgba(0,0,0,.25);--shadow-sm:0 2px 12px rgba(0,0,0,.2);
@@ -37,14 +43,15 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);}
 /* ═══════════════════ SIDEBAR ═══════════════════ */
 .sb{
   width:224px;min-width:224px;
-  background:linear-gradient(180deg,#111827 0%,#0f1d35 100%);
-  border-right:1px solid rgba(255,255,255,.06);
+  background:var(--sb-bg);
+  border-right:1px solid var(--sb-bord);
   display:flex;flex-direction:column;overflow:hidden;
   box-shadow:4px 0 20px rgba(0,0,0,.3);
+  transition:background .25s;
 }
 .sb-logo{
   padding:20px 18px 16px;
-  border-bottom:1px solid rgba(255,255,255,.06);
+  border-bottom:1px solid var(--sb-bord);
   background:rgba(255,255,255,.02);
 }
 .sb-logo-wrap{display:flex;align-items:center;gap:10px;}
@@ -58,7 +65,7 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);}
 .sb-logo h1 span{background:var(--acc-g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
 .sb-logo .ver{font-size:9px;color:var(--mt);font-family:var(--fm);margin-top:1px;letter-spacing:.5px;}
 
-.sb-kpi{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.05);}
+.sb-kpi{padding:14px 16px;border-bottom:1px solid var(--sb-bord);}
 .skp{margin-bottom:11px;}.skp:last-child{margin-bottom:0;}
 .skp-l{font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.8px;margin-bottom:2px;}
 .skp-v{font-family:var(--fm);font-size:18px;font-weight:500;color:var(--wh);line-height:1.1;}
@@ -66,17 +73,17 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);}
 
 .sb-nav{flex:1;overflow-y:auto;padding:10px 8px;}
 .sb-section-lbl{
-  font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:1px;
+  font-size:9px;color:var(--sb-tx);opacity:.65;text-transform:uppercase;letter-spacing:1px;
   padding:6px 10px 4px;margin-top:4px;
 }
 .ni{
   display:flex;align-items:center;gap:10px;
   padding:9px 12px;border-radius:var(--rad-sm);
-  cursor:pointer;font-size:13px;font-weight:500;color:var(--tx2);
+  cursor:pointer;font-size:13px;font-weight:500;color:var(--sb-tx);
   transition:all .18s;margin-bottom:2px;position:relative;
   border:none;background:none;width:100%;text-align:left;
 }
-.ni:hover{background:var(--glass2);color:var(--tx);}
+.ni:hover{background:var(--sb-hi);color:var(--sb-txh);}
 .ni.on{
   background:linear-gradient(135deg,rgba(79,142,247,.18),rgba(124,58,237,.12));
   color:var(--wh);
@@ -103,7 +110,7 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);}
   color:var(--hot);border-radius:10px;padding:2px 8px;
   font-family:var(--fm);border:1px solid rgba(244,63,94,.2);
 }
-.sb-sep{height:1px;background:rgba(255,255,255,.05);margin:8px 4px;}
+.sb-sep{height:1px;background:var(--sb-bord);margin:8px 4px;}
 
 /* ═══════════════════ MAIN ═══════════════════ */
 .main{flex:1;overflow-y:auto;overflow-x:hidden;background:var(--bg);}
@@ -425,10 +432,29 @@ html.light{
   --tx:#1e293b;--tx2:#436078;--wh:#0f172a;--mt:#7a90ae;
   --shadow:0 4px 24px rgba(0,0,0,.08);--shadow-sm:0 2px 12px rgba(0,0,0,.06);
 }
+html.light{
+  --sb-bg:linear-gradient(180deg,#e8eef8 0%,#dde6f5 100%);
+  --sb-bord:rgba(30,60,120,.12);
+  --sb-tx:rgba(25,55,100,.65);
+  --sb-txh:#132044;
+  --sb-hi:rgba(79,142,247,.12);
+}
 html.light body{background:var(--bg);color:var(--tx);}
-html.light .sb{background:linear-gradient(180deg,#1c2d4d 0%,#111f36 100%)!important;}
+html.light .sb{box-shadow:4px 0 16px rgba(30,60,120,.12)!important;}
+html.light .ni.on{
+  background:linear-gradient(135deg,rgba(79,142,247,.22),rgba(124,58,237,.15))!important;
+  color:#132044!important;border-color:rgba(79,142,247,.4)!important;
+}
+html.light .ni-badge{background:rgba(244,63,94,.15)!important;color:#dc2626!important;}
+html.light .skp-v{color:#132044!important;font-weight:700;}
+html.light .skp-l,html.light .skp-s,html.light .sb-section-lbl{color:rgba(25,55,100,.5)!important;}
+html.light .sb-logo h1{color:#132044!important;}
+html.light .sb-logo h1 span{-webkit-text-fill-color:transparent!important;background:var(--acc-g)!important;-webkit-background-clip:text!important;}
+html.light .sb-logo .ver{color:rgba(25,55,100,.4)!important;}
+html.light .theme-btn{background:rgba(30,60,120,.1)!important;border-color:rgba(30,60,120,.2)!important;}
 html.light .cc,html.light .tw,html.light .mgrc,html.light .clic,
-html.light .recc,html.light .qcard,html.light .modal,html.light .sort-btn{background:var(--s2)!important;}
+html.light .recc,html.light .qcard,html.light .modal,html.light .sort-btn,
+html.light .rfm-info-card,html.light .rfm-seg,html.light .abc-cell,html.light .info-mini,html.light .pf-bar{background:var(--s2)!important;}
 html.light .ai-card{background:linear-gradient(135deg,rgba(139,92,246,.05),rgba(59,130,246,.03))!important;}
 html.light .kcard.kb{background:linear-gradient(135deg,rgba(79,142,247,.10),rgba(79,142,247,.03))!important;}
 html.light .kcard.kr{background:linear-gradient(135deg,rgba(244,63,94,.10),rgba(244,63,94,.03))!important;}
@@ -528,6 +554,52 @@ html.light .theme-btn{background:rgba(30,60,120,.08);border-color:rgba(30,60,120
   text-align:center;cursor:default;line-height:24px;transition:transform .1s;}
 .cohort-cell:hover{transform:scale(1.18);z-index:2;position:relative;}
 
+
+/* ── LIGHT: all text readable ─────────────────────────────────────────────── */
+html.light .pg-ti{-webkit-text-fill-color:unset!important;color:#0f172a!important;background:none!important;}
+html.light .pg-su,html.light .cc-ti span,html.light .kl,html.light .kt.fl,html.light .ms-l,html.light .clic-mgr,html.light .clic-stat-l,html.light .td-mgr,html.light .td-grp,html.light .no-data,html.light .hm-th,html.light .cohort-th,html.light .cohort-rn,html.light .hm-rn,html.light .rfm-info-desc,html.light .info-mini-b,html.light .abc-cell-desc,html.light .abc-cell-cnt,html.light .skp-l{color:#476080!important;}
+html.light .cc-ti,html.light .kv,html.light .kt.up,html.light .ms-v,html.light .clic-nm,html.light .td-name,html.light .mgrc-nm,html.light .recc-ti,html.light .reci-n,html.light .modal-h,html.light .mkpi-v,html.light .qcard-v,html.light .info-mini-h,html.light .rfm-seg-cnt,html.light .abc-cell-rev{color:#0f172a!important;}
+html.light td,html.light .td-mono{color:#1e293b!important;}
+html.light th{color:#476080!important;}
+html.light .kt.dn{color:#dc2626!important;}
+html.light .kt.up{color:#059669!important;}
+html.light .ai-hd-ti{color:var(--pu)!important;}
+html.light .ai-body{color:#1e293b!important;}
+html.light .ai-body strong{color:#0f172a!important;}
+html.light .ltv-formula{color:#1e293b!important;}
+html.light .ltv-formula strong{color:#0f172a!important;}
+html.light .info-card{background:linear-gradient(135deg,rgba(79,142,247,.06),rgba(139,92,246,.04))!important;border-color:rgba(79,142,247,.2)!important;}
+html.light .info-card .info-body{color:#1e293b!important;}
+html.light .info-card .info-label{color:var(--acc)!important;}
+html.light .pf-btn{color:#476080!important;}
+html.light .pf-btn.on{color:var(--acc)!important;}
+html.light .sort-btn{color:#476080!important;}
+html.light .sort-btn.on{color:var(--acc)!important;}
+html.light .modal-sub,html.light .mkpi-l,html.light .qcard-l,html.light .qcard-sub{color:#476080!important;}
+html.light .rfm-seg-name{color:inherit!important;}
+html.light .rfm-seg-rev{color:#7a90ae!important;}
+html.light .hm-cell{border-radius:3px!important;}
+
+/* ── INFO CARDS ───────────────────────────────────────────────────────────── */
+.info-card{
+  background:linear-gradient(135deg,rgba(79,142,247,.07),rgba(139,92,246,.05));
+  border:1px solid rgba(79,142,247,.18);border-radius:var(--rad);
+  padding:16px 20px;margin-bottom:18px;
+}
+.info-card .info-label{font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--acc);font-weight:700;margin-bottom:8px;}
+.info-card .info-body{font-size:12px;color:var(--tx);line-height:1.78;}
+.info-card .info-body strong{color:var(--wh);font-weight:600;}
+.info-card .info-body .tag{
+  display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-family:var(--fm);
+  background:rgba(79,142,247,.12);color:var(--acc);margin:2px 2px 0 0;border:1px solid rgba(79,142,247,.2);
+}
+.info-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;}
+.info-grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:18px;}
+.info-mini{background:var(--s2);border:1px solid var(--bord);border-radius:9px;padding:12px 14px;}
+.info-mini-h{font-size:11px;font-weight:700;color:var(--tx);margin-bottom:5px;display:flex;align-items:center;justify-content:space-between;}
+.info-mini-b{font-size:11px;color:var(--tx2);line-height:1.6;}
+@media(max-width:860px){.info-grid-3,.info-grid-2{grid-template-columns:1fr!important;}}
+
 </style>
 </head>
 <body>
@@ -539,7 +611,7 @@ html.light .theme-btn{background:rgba(30,60,120,.08);border-color:rgba(30,60,120
         <button class="theme-btn" id="theme-btn" title="Тема">☀️</button>
         <div>
           <h1>ML <span>Продажник</span></h1>
-          <div class="ver">PRO · v4.0</div>
+          <div class="ver">PRO · v5.0</div>
         </div>
       </div>
     </div>
@@ -555,9 +627,40 @@ html.light .theme-btn{background:rgba(30,60,120,.08);border-color:rgba(30,60,120
 
 <script>
 // ─── CONSTANTS ────────────────────────────────────────────────────────────
-const ML=['Янв.25','Фев.25','Мар.25','Апр.25','Май.25','Июн.25',
-  'Июл.25','Авг.25','Сен.25','Окт.25','Ноя.25','Дек.25','Янв.26','Фев.26','Мар.26'];
-const COL=[4,6,7,8,9,10,11,12,13,14,15,16,17,18,19];
+// Dynamic months (1–36): populated on file load
+let MONTHS=[];  // ['Янв.25','Фев.25',...]
+let DYN_COL=[]; // actual Excel column indices
+
+const RU_MONTHS_SHORT=['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+
+function normMonthLabel(raw){
+  const s=String(raw||'').trim();
+  if(/^[А-ЯЁа-яё]{3}[\.\s]\d{2}$/.test(s))return s; // already "Янв.25"
+  // "Январь 2025" → "Янв.25"
+  const m=s.match(/([А-ЯЁа-яё]{3,})[а-яё]*[\.\s]+(\d{4}|\d{2})/i);
+  if(m){const mon=m[1].slice(0,3);const yr=m[2].slice(-2);return mon[0].toUpperCase()+mon.slice(1).toLowerCase()+'.'+yr;}
+  return s;
+}
+function isMonthCell(v){
+  const s=String(v||'').trim().toLowerCase();
+  return RU_MONTHS_SHORT.some(k=>s.startsWith(k));
+}
+function detectMonths(headerRow){
+  const cols=[],labels=[];
+  for(let ci=4;ci<Math.min((headerRow||[]).length,52);ci++){
+    const v=headerRow[ci];
+    if(v!==null&&v!==undefined&&v!==''&&isMonthCell(String(v))){
+      cols.push(ci); labels.push(normMonthLabel(v));
+    }
+  }
+  if(!cols.length){ // fallback: legacy 15 months
+    return{cols:[4,6,7,8,9,10,11,12,13,14,15,16,17,18,19],
+      labels:['Янв.25','Фев.25','Мар.25','Апр.25','Май.25','Июн.25','Июл.25','Авг.25','Сен.25','Окт.25','Ноя.25','Дек.25','Янв.26','Фев.26','Мар.26']};
+  }
+  return{cols,labels};
+}
+// Keep ML as alias for MONTHS for backward compat
+Object.defineProperty(window,'ML',{get(){return MONTHS;},configurable:true});
 const PC=['#4f8ef7','#22d3ee','#10b981','#f59e0b','#f43f5e','#8b5cf6','#06b6d4',
   '#84cc16','#fb923c','#e879f9','#34d399','#fbbf24','#f87171','#a78bfa','#67e8f9'];
 const CHART_DEF={color:'#c8daf0',borderColor:'rgba(255,255,255,.06)',
@@ -634,7 +737,7 @@ function parseRows(rows){
     // --- Артикул товара ---
     if(isProd(nm)){
       if(ck&&map[ck]){
-        const t=COL.reduce((s,ci)=>s+pn(c[ci]),0);
+        const t=DYN_COL.reduce((s,ci)=>s+pn(c[ci]),0);
         if(t>0){const g=map[ck]._lg||'Прочее';map[ck].prod[g]=(map[ck].prod[g]||0)+t;}
       }
       continue;
@@ -644,14 +747,14 @@ function parseRows(rows){
     if(state==='need_client'){
       // Первая строка после менеджера ВСЕГДА клиент — независимо от формата имени
       ck=nm+'\x00'+mgr;
-      if(!map[ck])map[ck]={name:nm,mgr,mo:COL.map(ci=>pn(c[ci])),prod:{},_lg:''};
+      if(!map[ck])map[ck]={name:nm,mgr,mo:DYN_COL.map(ci=>pn(c[ci])),prod:{},_lg:''};
       state='in_client';
     } else if(state==='in_client'||state==='in_group'){
       // Либо новый клиент, либо товарная группа
       if(couldBeCli(nm)){
         // Это новый клиент
         ck=nm+'\x00'+mgr;
-        if(!map[ck])map[ck]={name:nm,mgr,mo:COL.map(ci=>pn(c[ci])),prod:{},_lg:''};
+        if(!map[ck])map[ck]={name:nm,mgr,mo:DYN_COL.map(ci=>pn(c[ci])),prod:{},_lg:''};
         state='in_client';
       } else {
         // Это товарная группа — запомнить как _lg
@@ -665,16 +768,19 @@ function parseRows(rows){
 
 // CSV → rows[][]
 function parseCSV(txt){
-  const lines=txt.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').slice(13);
-  return parseRows(lines.filter(l=>l.trim()).map(l=>l.split(';')));
+  const all=txt.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
+  const det=detectMonths((all[12]||'').split(';'));
+  DYN_COL=det.cols; MONTHS=det.labels;
+  return parseRows(all.slice(13).filter(l=>l.trim()).map(l=>l.split(';')));
 }
 
 // XLSX → rows[][] (через SheetJS)
 function parseXLSX(ab){
   const wb=XLSX.read(ab,{type:'array',cellText:false,cellDates:false});
   const ws=wb.Sheets[wb.SheetNames[0]];
-  // sheet_to_json с header:1 → массив массивов
   const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:true});
+  const det=detectMonths(rows[12]||[]);
+  DYN_COL=det.cols; MONTHS=det.labels;
   return parseRows(rows.slice(13));
 }
 function compute(raw){
@@ -686,10 +792,11 @@ function compute(raw){
     let rec=-1;for(let j=m.length-1;j>=0;j--){if(m[j]>0){rec=j;break;}}
     const l3=m.slice(-3).reduce((a,b)=>a+b,0),p3=m.slice(-6,-3).reduce((a,b)=>a+b,0);
     const tr=p3>0?(l3-p3)/p3:(l3>0?1:0);
-    const raw2=Math.min(100,Math.max(0,(rec/14)*35+(freq/15)*30+Math.max(0,Math.min(20,tr*20+10))+(tot/mx)*15));
+    const N=Math.max(1,MONTHS.length||15);
+    const raw2=Math.min(100,Math.max(0,(rec/(N-1||1))*35+(freq/N)*30+Math.max(0,Math.min(20,tr*20+10))+(tot/mx)*15));
     const prob=raw2/100;
-    const avgI=freq>1?Math.round(15/freq):2;
-    const nd=Math.max(0,Math.round((avgI-(14-rec))*30));
+    const avgI=freq>1?Math.round(N/freq):2;
+    const nd=Math.max(0,Math.round((avgI-(N-1-rec))*30));
     const te=Object.entries(c.prod).sort((a,b)=>b[1]-a[1])[0];
     return{name:c.name,mgr:c.mgr,prob,total:tot,mo:m,rec,tr,nd,
       tg:te?te[0]:(c._lg||'Нет данных'),prod:c.prod};
@@ -720,7 +827,7 @@ function toast(msg,type=''){
 function showClientModal(r){
   const ov=document.createElement('div');ov.className='modal-ov';
   const p=pct(r.prob),col=p>=70?'var(--hot)':p>=40?'var(--warm)':'var(--mt)';
-  const lastBuy=r.rec>=0?ML[r.rec]:'—';
+  const lastBuy=(r.rec>=0&&MONTHS[r.rec])?MONTHS[r.rec]:'—';
   const prods=Object.entries(r.prod).sort((a,b)=>b[1]-a[1]).slice(0,6);
   ov.innerHTML=`<div class="modal">
     <button class="modal-cl" id="mc-cls">✕</button>
@@ -746,14 +853,14 @@ function showClientModal(r){
   ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
   document.getElementById('mc-cls').addEventListener('click',()=>ov.remove());
   const ctx=document.getElementById('mc-chart');
-  new Chart(ctx,{type:'bar',data:{labels:ML,datasets:[{label:'Выручка',data:r.mo,backgroundColor:r.mo.map((v,i)=>i>=12?'rgba(139,92,246,.6)':'rgba(59,130,246,.5)'),borderRadius:3}]},options:{maintainAspectRatio:false,plugins:{...CHART_DEF.plugins,legend:{display:false}},scales:{x:{ticks:{color:'#4b6282',font:{size:8}},grid:{color:'#1b2a3d'},border:{display:false}},y:{ticks:{color:'#4b6282',font:{size:9}},grid:{color:'#1b2a3d'},border:{display:false}}}}});
+  new Chart(ctx,{type:'bar',data:{labels:MONTHS,datasets:[{label:'Выручка',data:r.mo,backgroundColor:r.mo.map((v,i)=>i>=12?'rgba(139,92,246,.6)':'rgba(59,130,246,.5)'),borderRadius:3}]},options:{maintainAspectRatio:false,plugins:{...CHART_DEF.plugins,legend:{display:false}},scales:{x:{ticks:{color:'#4b6282',font:{size:8}},grid:{color:'#1b2a3d'},border:{display:false}},y:{ticks:{color:'#4b6282',font:{size:9}},grid:{color:'#1b2a3d'},border:{display:false}}}}});
 }
 
 // ─── EXPORT XLSX ──────────────────────────────────────────────────────────
 function exportScoringXLSX(rows){
   const hdr=['#','Клиент','Менеджер','Вероятность %','Выручка ₽','Посл. покупка','Тренд','Топ группа','Следующая покупка'];
   const data=[hdr,...rows.map((r,i)=>[
-    i+1,r.name,r.mgr,pct(r.prob),r.total,r.rec>=0?ML[r.rec]:'—',
+    i+1,r.name,r.mgr,pct(r.prob),r.total,r.rec>=0?MONTHS[r.rec]:'—',
     r.tr>0.1?`▲ ${Math.round(r.tr*100)}%`:r.tr<-0.1?`▼ ${Math.round(Math.abs(r.tr)*100)}%`:'→ стабильно',
     r.tg,nextTxt(r.nd)])];
   const ws=XLSX.utils.aoa_to_sheet(data);
@@ -800,6 +907,7 @@ const PAGES=[
   {id:'managers',ic:'👥',lb:'Менеджеры'},
   {id:'clients',ic:'🏢',lb:'Клиенты'},
   {id:'products',ic:'📦',lb:'Товары'},
+  {id:'prodheat',ic:'🌡️',lb:'Карта продаж'},
   {id:'rfm',ic:'🎯',lb:'RFM'},
   {id:'abcxyz',ic:'🔢',lb:'ABC/XYZ'},
   {id:'ltv',ic:'💎',lb:'LTV'},
@@ -843,6 +951,7 @@ function renderPage(){
   else if(PAGE==='managers')renderManagers(m);
   else if(PAGE==='clients')renderClients(m);
   else if(PAGE==='products')renderProducts(m);
+  else if(PAGE==='prodheat')renderProdHeat(m);
   else if(PAGE==='rfm')renderRFM(m);
   else if(PAGE==='abcxyz')renderABCXYZ(m);
   else if(PAGE==='ltv')renderLTV(m);
@@ -913,12 +1022,33 @@ function initUpload(){
 }
 
 // ─── OVERVIEW ─────────────────────────────────────────────────────────────
+function buildPeriodOptions(){
+  const N=MONTHS.length||15;
+  const opts=[{v:'all',l:'Все '+N+' мес.'}];
+  // unique years
+  const seen=new Set();
+  MONTHS.forEach(function(ml){
+    const ym=ml.match(/\.(\d{2})$/);
+    if(ym&&!seen.has(ym[1])){seen.add(ym[1]);opts.push({v:'y'+ym[1],l:'20'+ym[1]+' год'});}
+  });
+  if(N>=12)opts.push({v:'last12',l:'Посл. 12 мес.'});
+  if(N>=6) opts.push({v:'last6', l:'Посл. 6 мес.'});
+  if(N>=3) opts.push({v:'last3', l:'Посл. 3 мес.'});
+  return opts;
+}
 function getOvIdxRange(){
-  if(OV_PERIOD==='2025')return[0,11];
-  if(OV_PERIOD==='2026')return[12,14];
-  if(OV_PERIOD==='last6')return[9,14];
-  if(OV_PERIOD==='last3')return[12,14];
-  return[0,14];
+  const N=MONTHS.length||15;
+  if(OV_PERIOD==='all')return[0,N-1];
+  if(OV_PERIOD==='last12')return[Math.max(0,N-12),N-1];
+  if(OV_PERIOD==='last6') return[Math.max(0,N-6), N-1];
+  if(OV_PERIOD==='last3') return[Math.max(0,N-3), N-1];
+  if(OV_PERIOD.startsWith('y')){
+    const yr=OV_PERIOD.slice(1); // "25"
+    const s=MONTHS.findIndex(function(m){return m.endsWith('.'+yr);});
+    const e=MONTHS.reduce(function(mx,m,i){return m.endsWith('.'+yr)?i:mx;},-1);
+    if(s>=0&&e>=s)return[s,e];
+  }
+  return[0,N-1];
 }
 function renderOverview(m){
   const[s,e]=getOvIdxRange();
@@ -930,14 +1060,20 @@ function renderOverview(m){
   const mdata=ML2.map((_,i)=>DATA.reduce((ss,r)=>(r.mo[s+i]||0)+ss,0)/1000);
   const lm=mdata[mdata.length-1]||0,pm=mdata.length>1?(mdata[mdata.length-2]||0):0;
   const rtr=pm>0?((lm-pm)/pm*100):0;
-  const top10=DATA.slice(0,10);
+  // Top-10 by revenue in selected period
+  const top10=[...DATA].sort(function(a,b){
+    var ra=a.mo.slice(s,e+1).reduce(function(x,y){return x+y;},0);
+    var rb=b.mo.slice(s,e+1).reduce(function(x,y){return x+y;},0);
+    return rb-ra;
+  }).slice(0,10);
+  const top10Rev=top10.map(function(r){return r.mo.slice(s,e+1).reduce(function(x,y){return x+y;},0);});
   const mgrMap={};DATA.forEach(r=>{if(!mgrMap[r.mgr])mgrMap[r.mgr]=0;mgrMap[r.mgr]+=r.mo.slice(s,e+1).reduce((a,b)=>a+b,0);});
   const mgrArr=Object.entries(mgrMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
-  const pfLabels={'all':'Все 15 мес.','2025':'2025 год','2026':'2026 Q1','last6':'Посл. 6 мес.','last3':'Посл. 3 мес.'};
+  const pfOpts=buildPeriodOptions();
   m.innerHTML='<div class="pg">'
     +'<div class="pg-hd"><div class="pg-ti">Общий обзор</div><div class="pg-su">Сводная аналитика · '+DATA.length+' клиентов · '+mgrs+' менеджеров</div></div>'
     +'<div class="pf-bar"><span class="pf-lbl">Период:</span>'
-    +Object.keys(pfLabels).map(k=>'<button class="pf-btn'+(OV_PERIOD===k?' on':'')+'" data-pf="'+k+'">'+pfLabels[k]+'</button>').join('')
+    +pfOpts.map(function(o){return '<button class="pf-btn'+(OV_PERIOD===o.v?' on':'')+'" data-pf="'+o.v+'">'+o.l+'</button>';}).join('')
     +'</div>'
     +'<div class="ai-card" style="margin-bottom:20px"><div class="ai-hd"><span class="ai-hd-ic">🤖</span><span class="ai-hd-ti">AI-аналитик</span><span class="ai-hd-badge">Claude</span></div><div class="ai-body" id="ai-insights-body"></div></div>'
     +'<div class="kgrid">'
@@ -948,14 +1084,14 @@ function renderOverview(m){
     +'</div>'
     +'<div class="cg2" style="margin-bottom:12px">'
     +'<div class="cc"><div class="cc-ti">Динамика продаж <span>тыс. руб.</span></div><div class="ch-wrap" style="height:180px"><canvas id="ch-trend"></canvas></div></div>'
-    +'<div class="cc"><div class="cc-ti">Топ-10 клиентов <span>тыс. руб.</span></div><div class="ch-wrap" style="height:180px"><canvas id="ch-top10"></canvas></div></div>'
+    +'<div class="cc"><div class="cc-ti">Топ-10 за период <span>выручка тыс. руб.</span></div><div class="ch-wrap" style="height:180px"><canvas id="ch-top10"></canvas></div></div>'
     +'</div>'
     +'<div class="cc"><div class="cc-ti">Выручка по менеджерам <span>тыс.руб. · <span style="color:var(--acc)">клик → открыть клиентов</span></span></div><div class="ch-wrap" style="height:130px"><canvas id="ch-mgrs"></canvas></div></div>'
     +'</div>';
   document.querySelectorAll('.pf-btn[data-pf]').forEach(btn=>btn.addEventListener('click',()=>{OV_PERIOD=btn.dataset.pf;renderPage();}));
   const cf={plugins:{...CHART_DEF.plugins},scales:{...CHART_DEF.scales}};
   CHARTS.trend=new Chart(document.getElementById('ch-trend'),{type:'line',data:{labels:ML2,datasets:[{label:'Выручка',data:mdata,borderColor:'#4f8ef7',backgroundColor:'rgba(79,142,247,.12)',fill:true,tension:.4,borderWidth:2.5,pointRadius:0}]},options:{...cf,maintainAspectRatio:false}});
-  CHARTS.top10=new Chart(document.getElementById('ch-top10'),{type:'bar',data:{labels:top10.map(r=>r.name.split(' ').slice(0,2).join(' ')),datasets:[{label:'Выручка',data:top10.map(r=>Math.round(r.total/1000)),backgroundColor:'rgba(34,211,238,.7)',borderRadius:5,borderSkipped:false}]},options:{...cf,indexAxis:'y',maintainAspectRatio:false,plugins:{...cf.plugins,legend:{display:false}}}});
+  CHARTS.top10=new Chart(document.getElementById('ch-top10'),{type:'bar',data:{labels:top10.map(r=>r.name.split(' ').slice(0,2).join(' ')),datasets:[{label:'Выручка',data:top10Rev.map(function(v){return Math.round(v/1000);}),backgroundColor:'rgba(34,211,238,.7)',borderRadius:5,borderSkipped:false}]},options:{...cf,indexAxis:'y',maintainAspectRatio:false,plugins:{...cf.plugins,legend:{display:false}}}});
   CHARTS.mgrs=new Chart(document.getElementById('ch-mgrs'),{type:'bar',data:{labels:mgrArr.map(x=>x[0].split(' ').slice(0,2).join(' ')),datasets:[{label:'Выручка, тыс.',data:mgrArr.map(x=>Math.round(x[1]/1000)),backgroundColor:PC.slice(0,10),borderRadius:5,borderSkipped:false}]},options:{...cf,maintainAspectRatio:false,plugins:{...cf.plugins,legend:{display:false}}}});
   // CROSS-FILTER: клик по менеджеру → страница клиентов с фильтром
   document.getElementById('ch-mgrs').addEventListener('click',function(evt){
@@ -1017,7 +1153,7 @@ function drawScoringTable(){
     <td class="td-mgr">${esc(r.mgr)}</td>
     <td>${pbHtml(r.prob)}</td>
     <td class="td-mono">${fmt(r.total)}</td>
-    <td class="td-mono">${r.rec>=0?ML[r.rec]:'—'}</td>
+    <td class="td-mono">${r.rec>=0?MONTHS[r.rec]:'—'}</td>
     <td>${trendHtml(r.tr)}</td>
     <td class="td-grp" title="${esc(r.tg)}">${esc(r.tg)}</td>
     <td class="td-mono">${nextTxt(r.nd)}</td>
@@ -1122,7 +1258,7 @@ function drawClients(){
       <div class="clic-stats">
         <div><div class="clic-stat-l">Выручка</div><div class="clic-stat-v">${fmt(r.total)}</div></div>
         <div><div class="clic-stat-l">Следующая</div><div class="clic-stat-v" style="font-size:10px">${nextTxt(r.nd)}</div></div>
-        <div><div class="clic-stat-l">Посл. пок.</div><div class="clic-stat-v" style="font-size:10px">${r.rec>=0?ML[r.rec]:'—'}</div></div>
+        <div><div class="clic-stat-l">Посл. пок.</div><div class="clic-stat-v" style="font-size:10px">${r.rec>=0?MONTHS[r.rec]:'—'}</div></div>
       </div>
       ${r.tg&&r.tg!=='Нет данных'?`<div style="margin-top:8px;font-size:10px;color:var(--mt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.tg)}">${esc(r.tg)}</div>`:''}
     </div>`;}).join('')}
@@ -1189,7 +1325,7 @@ function renderForecast(m){
           </tr></thead>
           <tbody>${top30.map(r=>`<tr>
             <td class="hm-rn" title="${esc(r.name)}">${esc(r.name.split(' ').slice(0,4).join(' '))}</td>
-            ${r.mo.map((v,i)=>`<td><div class="hm-cell" title="${ML[i]}: ${fmt(v)}" style="background:${hcol(v)}"></div></td>`).join('')}
+            ${r.mo.map((v,i)=>`<td><div class="hm-cell" title="${MONTHS[i]}: ${fmt(v)}" style="background:${hcol(v)}"></div></td>`).join('')}
           </tr>`).join('')}</tbody>
         </table>
         <div class="hm-legend">
@@ -1283,7 +1419,7 @@ function drawCmpChart(){
   const revA=x=>A.reduce((s,r)=>s+r.total,0),revB=x=>B.reduce((s,r)=>s+r.total,0);
   const hotA=A.filter(r=>r.prob>=.7).length,hotB=B.filter(r=>r.prob>=.7).length;
   const avgA=A.length?revA()/A.length:0,avgB=B.length?revB()/B.length:0;
-  CHARTS.cmp1=new Chart(document.getElementById('ch-cmp1'),{type:'line',data:{labels:ML,datasets:[
+  CHARTS.cmp1=new Chart(document.getElementById('ch-cmp1'),{type:'line',data:{labels:MONTHS,datasets:[
     {label:CMP_M1,data:ML.map((_,i)=>Math.round(A.reduce((s,r)=>(r.mo[i]||0)+s,0)/1000)),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.1)',fill:true,tension:.4,borderWidth:2,pointRadius:0},
     {label:CMP_M2,data:ML.map((_,i)=>Math.round(B.reduce((s,r)=>(r.mo[i]||0)+s,0)/1000)),borderColor:'#22d3ee',backgroundColor:'rgba(34,211,238,.08)',fill:true,tension:.4,borderWidth:2,pointRadius:0}
   ]},options:{maintainAspectRatio:false,plugins:{...CHART_DEF.plugins},scales:{x:{ticks:{color:'#4b6282',font:{size:9}},grid:{color:'#1b2a3d'},border:{display:false}},y:{ticks:{color:'#4b6282',font:{size:9}},grid:{color:'#1b2a3d'},border:{display:false}}}}});
@@ -1301,20 +1437,155 @@ function drawCmpChart(){
   </table>`;}
 
 
+
+// ─── PRODUCT SALES HEATMAP ────────────────────────────────────────────────
+function renderProdHeat(m){
+  // Aggregate product group revenue by month
+  const grpMap={};
+  DATA.forEach(function(r){
+    const tot=r.mo.reduce(function(a,b){return a+b;},0);
+    Object.entries(r.prod).forEach(function(en){
+      var grp=en[0],val=en[1];
+      if(!grp||grp==='Прочее'||!val)return;
+      if(!grpMap[grp])grpMap[grp]=new Array(MONTHS.length).fill(0);
+      if(tot>0){r.mo.forEach(function(mv,mi){if(mi<MONTHS.length&&mv>0)grpMap[grp][mi]+=(mv/tot)*val;});}
+      else{grpMap[grp][MONTHS.length-1]=(grpMap[grp][MONTHS.length-1]||0)+val;}
+    });
+  });
+  const prods=Object.entries(grpMap)
+    .map(function(en){return{name:en[0],mo:en[1],total:en[1].reduce(function(a,b){return a+b;},0)};})
+    .filter(function(p){return p.total>0;})
+    .sort(function(a,b){return b.total-a.total;})
+    .slice(0,25);
+  if(!prods.length){
+    m.innerHTML='<div class="pg"><div class="pg-hd"><div class="pg-ti">Тепловая карта продаж</div></div>'
+      +'<div class="no-data" style="padding:80px">Нет данных о товарных группах в загруженном файле.</div></div>';
+    return;
+  }
+  const allVals=prods.flatMap(function(p){return p.mo;});
+  const mx=Math.max.apply(null,allVals.filter(function(v){return v>0;}),1)||1;
+  function hcell(v){
+    if(!v||v<1)return{bg:'rgba(255,255,255,.03)',fc:'transparent'};
+    var r=v/mx;
+    if(r>=.85)return{bg:'#1e3a8a',fc:'rgba(255,255,255,.95)'};
+    if(r>=.65)return{bg:'#1d4ed8',fc:'rgba(255,255,255,.9)'};
+    if(r>=.45)return{bg:'#2563eb',fc:'rgba(255,255,255,.85)'};
+    if(r>=.28)return{bg:'#3b82f6',fc:'rgba(255,255,255,.8)'};
+    if(r>=.14)return{bg:'#60a5fa',fc:'rgba(0,0,0,.6)'};
+    if(r>=.05)return{bg:'#93c5fd',fc:'rgba(0,0,0,.55)'};
+    return{bg:'#dbeafe',fc:'rgba(0,0,0,.4)'};
+  }
+  m.innerHTML='<div class="pg">'
+    +'<div class="pg-hd"><div class="pg-ti">Тепловая карта продаж</div><div class="pg-su">Выручка по товарным группам × месяцам</div></div>'
+    +'<div class="info-card"><div class="info-label">📌 Назначение карты</div><div class="info-body">'
+    +'Показывает <strong>сезонность и динамику продаж оборудования</strong> по категориям. '
+    +'Интенсивность цвета пропорциональна выручке: <strong style="color:#1d4ed8">тёмно-синий</strong> = максимум. '
+    +'Используйте для планирования закупок, сезонных акций, распределения нагрузки менеджеров. '
+    +'Выручка группы распределена по месяцам пропорционально активности клиентов.'
+    +'</div></div>'
+    +'<div class="cc" style="margin-bottom:14px;overflow-x:auto"><div class="cc-ti">Топ-25 групп × '+MONTHS.length+' месяцев <span>тыс. руб. в ячейке</span></div>'
+    +'<div class="heatmap-wrap"><table class="hm-table" style="border-spacing:2px"><thead><tr>'
+    +'<th class="hm-rn" style="min-width:140px;font-size:10px;color:var(--mt);text-align:left">Группа</th>'
+    +MONTHS.map(function(l){return '<th class="hm-th" style="min-width:38px">'+l+'</th>';}).join('')
+    +'<th class="hm-th" style="min-width:52px;color:var(--acc)">Итого</th>'
+    +'</tr></thead><tbody>'
+    +prods.map(function(p){
+      return '<tr><td class="hm-rn" title="'+esc(p.name)+'">'+esc(p.name.substring(0,24))+(p.name.length>24?'…':'')+'</td>'
+        +p.mo.map(function(v){
+          var h=hcell(v);
+          var txt=v>=1000?Math.round(v/1000)+'к':v>0?Math.round(v/100)/10+'к':'';
+          return '<td style="padding:1px"><div class="hm-cell" title="'+esc(p.name)+' '+MONTHS[p.mo.indexOf(v)||0]+': '+fmt(Math.round(v))+' руб." style="background:'+h.bg+';color:'+h.fc+';width:38px;height:24px;font-size:9px;line-height:24px;text-align:center;font-family:var(--fm);border-radius:3px">'+txt+'</div></td>';
+        }).join('')
+        +'<td style="font-family:var(--fm);font-size:11px;color:var(--tx2);padding:2px 8px;white-space:nowrap">'+fmt(Math.round(p.total/1000))+'к</td>'
+        +'</tr>';
+    }).join('')
+    +'</tbody></table></div>'
+    +'<div class="hm-legend" style="margin-top:10px"><span>Нет</span>'
+    +'<span class="hm-lc" style="background:#dbeafe"></span><span style="font-size:10px;color:var(--mt)">мало</span>'
+    +'<span class="hm-lc" style="background:#93c5fd"></span>'
+    +'<span class="hm-lc" style="background:#60a5fa"></span>'
+    +'<span class="hm-lc" style="background:#3b82f6"></span>'
+    +'<span class="hm-lc" style="background:#1d4ed8"></span>'
+    +'<span class="hm-lc" style="background:#1e3a8a"></span><span style="font-size:10px;color:var(--mt)">макс.</span>'
+    +'</div></div>'
+    +'<div class="cg22">'
+    +'<div class="cc"><div class="cc-ti">Топ-10 групп — итоговая выручка <span>тыс. руб.</span></div><div class="ch-wrap" style="height:270px"><canvas id="ch-ph-bar"></canvas></div></div>'
+    +'<div class="cc"><div class="cc-ti">Сезонность топ-5 групп <span>тыс. руб./мес.</span></div><div class="ch-wrap" style="height:270px"><canvas id="ch-ph-line"></canvas></div></div>'
+    +'</div>'
+    +'</div>';
+  var sc={x:{ticks:{color:'#56709a',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'},border:{display:false}},y:{ticks:{color:'#56709a',font:{size:9},callback:function(v){return fmt(v);}},grid:{color:'rgba(255,255,255,.04)'},border:{display:false}}};
+  CHARTS.phBar=new Chart(document.getElementById('ch-ph-bar'),{
+    type:'bar',
+    data:{labels:prods.slice(0,10).map(function(p){return p.name.substring(0,20)+(p.name.length>20?'…':'');}),
+      datasets:[{data:prods.slice(0,10).map(function(p){return Math.round(p.total/1000);}),backgroundColor:PC.slice(0,10),borderRadius:4}]},
+    options:{indexAxis:'y',maintainAspectRatio:false,plugins:{...CHART_DEF.plugins,legend:{display:false}},scales:{
+      x:{ticks:{color:'#56709a',font:{size:9},callback:function(v){return fmt(v);}},grid:{color:'rgba(255,255,255,.04)'},border:{display:false}},
+      y:{ticks:{color:'#56709a',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'},border:{display:false}}}}
+  });
+  var top5=prods.slice(0,5);
+  CHARTS.phLine=new Chart(document.getElementById('ch-ph-line'),{
+    type:'line',
+    data:{labels:MONTHS,datasets:top5.map(function(p,i){return{label:p.name.substring(0,16),
+      data:p.mo.map(function(v){return Math.round(v/1000);}),
+      borderColor:PC[i],backgroundColor:'transparent',tension:.35,borderWidth:2,pointRadius:0};})},
+    options:{maintainAspectRatio:false,plugins:{...CHART_DEF.plugins,legend:{labels:{color:'#7a90aa',font:{size:10},boxWidth:10}}},scales:sc}
+  });
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // ─── RFM ANALYSIS ──────────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════
 const RFM_SEG_META={
-  'Champions'    :{ic:'🏆',col:'#10b981',desc:'Купили недавно, часто, много'},
-  'Loyal'        :{ic:'💙',col:'#4f8ef7',desc:'Покупают регулярно'},
-  'Pot. Loyalist':{ic:'⭐',col:'#22d3ee',desc:'Новые с хорошим потенциалом'},
-  'New Customer' :{ic:'🌱',col:'#a3e635',desc:'Недавняя первая покупка'},
-  'At Risk'      :{ic:'⚠️',col:'#f43f5e',desc:'Ранее активные, пропали'},
-  'Cant Lose'    :{ic:'🆘',col:'#fb7185',desc:'Ценные, но давно нет'},
-  'Hibernating'  :{ic:'😴',col:'#56709a',desc:'Мало и нерегулярно'},
-  'Promising'    :{ic:'🚀',col:'#fb923c',desc:'Недавние, но ещё редко'},
-  'Need Attn'    :{ic:'👀',col:'#f59e0b',desc:'Средние по всем осям'},
-  'Lost'         :{ic:'💀',col:'#374151',desc:'Минимальная активность'},
+  'Champions':{ic:'🏆',col:'#10b981',
+    desc:'Купили недавно, часто, много',
+    scores:'R=5 F=5 M=5',
+    full:'Лучшие клиенты базы. Высокая выручка, частые и свежие покупки. Ядро бизнеса.',
+    action:'Программа лояльности, эксклюзивные предложения, благодарность. Не беспокоить лишний раз — ценят внимание, но не назойливость.'},
+  'Loyal':{ic:'💙',col:'#4f8ef7',
+    desc:'Покупают регулярно',
+    scores:'R≥3 F≥3 M≥4',
+    full:'Стабильные клиенты с хорошей выручкой. Надёжная основа — не топ, но предсказуемы.',
+    action:'Upsell: предложите новинки и комплектующие. Вовлекайте в реферальные программы.'},
+  'Pot. Loyalist':{ic:'⭐',col:'#22d3ee',
+    desc:'Новые с хорошим потенциалом',
+    scores:'R=4 F≤2 M≥2',
+    full:'Покупали недавно, но пока нечасто. Хороший старт — важно развить отношения.',
+    action:'Welcome-звонок, обучение продукту, скидка на второй заказ. Цель — сделать Loyal.'},
+  'New Customer':{ic:'🌱',col:'#a3e635',
+    desc:'Первая недавняя покупка',
+    scores:'R=4-5 F=1',
+    full:'Только начали сотрудничество. Первый опыт критически важен для удержания.',
+    action:'Быстрый follow-up 24–48ч, убедитесь в удовлетворённости, предложите сопутствующий товар.'},
+  'At Risk':{ic:'⚠️',col:'#f43f5e',
+    desc:'Ранее активные, сейчас пропали',
+    scores:'R≤2 F≥3 M≥3',
+    full:'Когда-то хорошие клиенты, но давно не покупают. Срочная реактивация.',
+    action:'Личный звонок менеджера с конкретным предложением. Выясните причину паузы.'},
+  'Cant Lose':{ic:'🆘',col:'#fb7185',
+    desc:'Ценные клиенты, но исчезли',
+    scores:'R≤2 F≥4 M≥4',
+    full:'Приносили много денег, но фактически ушли. Максимальный приоритет.',
+    action:'Звонок руководителя или старшего менеджера. Спецусловия: скидка, отсрочка, выезд.'},
+  'Hibernating':{ic:'😴',col:'#56709a',
+    desc:'Мало, нерегулярно, давно',
+    scores:'R≤2 F≤2',
+    full:'Небольшие покупки, нерегулярно, давно. Низкий приоритет без стимуляции.',
+    action:'Дешёвая рассылка с предложением, опрос о потребностях. Мало ресурсов.'},
+  'Promising':{ic:'🚀',col:'#fb923c',
+    desc:'Недавние, но ещё редко',
+    scores:'R≥3 F≤2 M≤2',
+    full:'Покупали недавно, но пока мало раз. Есть интерес — нужно развить.',
+    action:'Познакомьте с ассортиментом, предложите демо или тест новых категорий.'},
+  'Need Attn':{ic:'👀',col:'#f59e0b',
+    desc:'Средние по всем метрикам',
+    scores:'R~3 F~2-3',
+    full:'Средние показатели по всем трём метрикам. Без внимания скатятся в Hibernating.',
+    action:'Регулярный контакт раз в месяц, персональное предложение под сезон.'},
+  'Lost':{ic:'💀',col:'#374151',
+    desc:'Минимальная активность',
+    scores:'R=1 F=1 M=1',
+    full:'Очень давно не покупали, мало и мало денег. Скорее всего ушли к конкурентам.',
+    action:'Win-back акция в рассылке. Не тратьте дорогие ресурсы — приоритет минимальный.'},
 };
 function getRFMRows(){
   const n=DATA.length; if(!n)return[];
@@ -1355,6 +1626,15 @@ function renderRFM(m){
   function resolveCol(col){return col.startsWith('#')?col:'#4f8ef7';}
   m.innerHTML='<div class="pg">'
     +'<div class="pg-hd"><div class="pg-ti">RFM-анализ</div><div class="pg-su">Recency · Frequency · Monetary — '+rows.length+' клиентов</div></div>'
+    +'<div class="info-card"><div class="info-label">📌 Что такое RFM и зачем он нужен</div><div class="info-body">'
+    +'<strong>RFM-анализ</strong> сегментирует клиентскую базу по трём измерениям: '
+    +'<span class="tag">R = Recency</span> — как давно клиент покупал (балл 1–5, 5 = недавно), '
+    +'<span class="tag">F = Frequency</span> — как часто покупает (5 = очень часто), '
+    +'<span class="tag">M = Monetary</span> — сколько денег приносит (5 = топ-20% по выручке). '
+    +'Каждый клиент получает три балла → попадает в один из 10 сегментов. '
+    +'<strong>Результат:</strong> понятно кому звонить сейчас, кого реактивировать, кого не трогать. '
+    +'Снижает затраты на работу с базой на 20–40%.'
+    +'</div></div>'
     +'<div class="rfm-info-grid">'
     +'<div class="rfm-info-card"><div class="rfm-info-letter" style="color:var(--acc)">R</div><b style="font-size:12px">Recency — давность</b><div class="rfm-info-desc" style="margin-top:4px">Кол-во месяцев с последней покупки. Чем меньше — тем выше балл (1–5).</div></div>'
     +'<div class="rfm-info-card"><div class="rfm-info-letter" style="color:var(--cy)">F</div><b style="font-size:12px">Frequency — частота</b><div class="rfm-info-desc" style="margin-top:4px">Кол-во месяцев с покупками за 15 мес. Больше = выше балл.</div></div>'
@@ -1362,6 +1642,17 @@ function renderRFM(m){
     +'</div>'
     +'<div class="rfm-seg-grid">'
     +segs.map(s=>{const d=segMap[s];const meta=RFM_SEG_META[s];return '<div class="rfm-seg"><div class="rfm-seg-ic">'+meta.ic+'</div><div class="rfm-seg-name" style="color:'+meta.col+'">'+s+'</div><div class="rfm-seg-cnt">'+d.cnt+'</div><div class="rfm-seg-rev">'+(d.rev?fmt(d.rev):'—')+'</div></div>';}).join('')
+    +'</div>'
+    +'<div class="info-grid-3">'
+    +segs.map(function(s2){var d=segMap[s2];var meta=RFM_SEG_META[s2];return '<div class="info-mini" style="border-left:3px solid '+meta.col+'">'
+      +'<div class="info-mini-h">'
+      +'<span>'+meta.ic+' <span style="color:'+meta.col+'">'+s2+'</span></span>'
+      +'<span style="font-family:var(--fm);font-size:10px;color:var(--mt)">'+meta.scores+'</span>'
+      +'</div>'
+      +'<div class="info-mini-b">'
+      +'<span style="font-size:10px;font-weight:600;color:var(--tx)">'+meta.full+'</span><br>'
+      +'<span style="color:var(--acc);font-size:10px">→ </span>'+meta.action
+      +'</div></div>';}).join('')
     +'</div>'
     +'<div class="cg22" style="margin-bottom:14px">'
     +'<div class="cc"><div class="cc-ti">Клиентов по сегментам</div><div class="ch-wrap" style="height:230px"><canvas id="ch-rfm-bar"></canvas></div></div>'
@@ -1399,7 +1690,7 @@ function renderRFM(m){
           +'<td>'+score+'</td>'
           +'<td class="td-mono">'+fmt(r.total)+'</td>'
           +'<td class="td-mono">'+freq+' мес.</td>'
-          +'<td class="td-mono">'+(r.rec>=0?ML[r.rec]:'—')+'</td>'
+          +'<td class="td-mono">'+(r.rec>=0?MONTHS[r.rec]:'—')+'</td>'
           +'</tr>';
       }).join('')+'</tbody></table>';
     tw.querySelectorAll('tbody tr').forEach(function(tr,i){tr.addEventListener('click',function(){showClientModal(list[i]);});});
@@ -1465,6 +1756,12 @@ function renderABCXYZ(m){
   const matBg={'AX':'rgba(16,185,129,.14)','AZ':'rgba(244,63,94,.10)','CZ':'rgba(86,112,154,.08)'};
   m.innerHTML='<div class="pg">'
     +'<div class="pg-hd"><div class="pg-ti">ABC / XYZ анализ</div><div class="pg-su">Классификация по вкладу в выручку и стабильности спроса</div></div>'
+    +'<div class="info-card"><div class="info-label">📌 Метод расчёта и применение</div><div class="info-body">'
+    +'<strong>ABC</strong> по принципу Парето: <span class="tag">A = топ 80% выручки</span> <span class="tag">B = следующие 15%</span> <span class="tag">C = оставшиеся 5%</span>. '
+    +'<strong>XYZ</strong> по коэффициенту вариации CV=σ/μ: <span class="tag">X: CV≤25% — стабильные</span> <span class="tag">Y: CV≤50% — переменные</span> <span class="tag">Z: CV>50% — хаотичные</span>. '
+    +'Комбинация даёт матрицу <strong>3×3 = 9 сегментов</strong>. AX = приоритет менеджера, CZ = минимум усилий. '
+    +'<strong>Влияние:</strong> оптимизирует распределение времени менеджеров и страховые запасы.'
+    +'</div></div>'
     +'<div class="cg22" style="margin-bottom:14px">'
     +'<div class="cc"><div class="cc-ti">ABC — доля в выручке</div>'
     +'<div style="display:flex;gap:6px;margin-bottom:10px">'
@@ -1559,7 +1856,15 @@ function renderLTV(m){
   const tierH=rows.filter(function(r){return r.ltv>avgLTV*2;}).length;
   const avgLife=Math.round(rows.reduce(function(s,r){return s+r.lifespan;},0)/rows.length)||0;
   m.innerHTML='<div class="pg">'
-    +'<div class="pg-hd"><div class="pg-ti">LTV — Lifetime Value</div><div class="pg-su">Прогноз пожизненной ценности клиента для приоритизации менеджеров</div></div>'
+    +'<div class="pg-hd"><div class="pg-ti">LTV — Lifetime Value</div><div class="pg-su">Прогноз пожизненной ценности клиента</div></div>'
+    +'<div class="info-card"><div class="info-label">📌 Формула и применение</div><div class="info-body">'
+    +'<strong>LTV</strong> = прогнозная сумма выручки от клиента за всё время. '
+    +'Расчёт: <span class="tag">LTV = Avg_месячная_выручка × (1 / Churn_Rate)</span> '
+    +'где Churn = 1 − (активных_мес / всего_мес). '
+    +'Маржинальный LTV = LTV × 25% (условная маржа). '
+    +'<strong>Зачем:</strong> показывает реальную ценность клиента в долгосрочной перспективе. '
+    +'Клиент с маленьким разовым заказом, но высокой частотой, может быть ценнее крупного разового.'
+    +'</div></div>'
     +'<div class="ltv-formula">Формула: <strong>LTV = AvgMonthly × (1 / ChurnRate)</strong>. Churn = 1 − (активных мес. / 15). Маржинальный LTV = LTV × <strong>25%</strong>. Значения прогнозные.</div>'
     +'<div class="kgrid">'
     +'<div class="kcard kb"><div class="kcard-ic">💎</div><div class="kl">Средний LTV</div><div class="kv">'+fmt(avgLTV)+'</div><div class="kt fl">по базе</div></div>'
@@ -1627,7 +1932,7 @@ function renderCohorts(m){
   DATA.forEach(function(r){
     const firstMo=r.mo.findIndex(function(v){return v>0;});
     if(firstMo<0)return;
-    if(!cohortMap[firstMo])cohortMap[firstMo]={label:ML[firstMo],firstMo:firstMo,clients:[]};
+    if(!cohortMap[firstMo])cohortMap[firstMo]={label:MONTHS[firstMo],firstMo:firstMo,clients:[]};
     cohortMap[firstMo].clients.push(r);
   });
   const cohorts=Object.values(cohortMap).sort(function(a,b){return a.firstMo-b.firstMo;});
@@ -1657,6 +1962,14 @@ function renderCohorts(m){
   });
   m.innerHTML='<div class="pg">'
     +'<div class="pg-hd"><div class="pg-ti">Когортный анализ</div><div class="pg-su">Retention по месяцам с первой покупки — '+cohorts.length+' когорт</div></div>'
+    +'<div class="info-card"><div class="info-label">📌 Как читать и что искать</div><div class="info-body">'
+    +'<strong>Когорта</strong> = группа клиентов с одинаковым месяцем первой покупки. '
+    +'<span class="tag">M0</span> = базовый месяц (первая покупка). '
+    +'<span class="tag">M+1, M+2...</span> = % клиентов когорты, купивших через N месяцев после первой. '
+    +'Резкое падение на M+1 → проблема удержания после первой сделки. '
+    +'Стабильное плато → сильная лояльность. '
+    +'<strong>Влияние:</strong> найдите оптимальный момент для follow-up звонка — это М+1 или М+2.'
+    +'</div></div>'
     +'<div class="ai-card" style="margin-bottom:16px"><div class="ai-hd"><span class="ai-hd-ic">📖</span><span class="ai-hd-ti">Как читать матрицу</span></div>'
     +'<div class="ai-body" style="font-size:12px;color:var(--tx2)"><b>M0</b> = месяц первой покупки (базовый). <b>M+1</b> = доля купивших в следующем месяце. Пустые ячейки — нет данных за период. Чем синее — тем выше удержание.</div></div>'
     +'<div class="cc" style="margin-bottom:14px"><div class="cc-ti">Retention matrix <span>'+cohorts.length+' когорт × '+offLabels.length+' периодов</span></div>'
@@ -1695,10 +2008,26 @@ function applyTheme(){
     document.documentElement.classList.remove('light');
     Chart.defaults.color='#7a94bb';
     Chart.defaults.borderColor='rgba(255,255,255,.05)';
+    CHART_DEF.plugins.tooltip.backgroundColor='#1a2540';
+    CHART_DEF.plugins.tooltip.titleColor='#e8f1fb';
+    CHART_DEF.plugins.tooltip.bodyColor='#7a94bb';
+    CHART_DEF.plugins.legend.labels.color='#7a94bb';
+    CHART_DEF.scales.x.ticks.color='#56709a';
+    CHART_DEF.scales.y.ticks.color='#56709a';
+    CHART_DEF.scales.x.grid.color='rgba(255,255,255,.04)';
+    CHART_DEF.scales.y.grid.color='rgba(255,255,255,.04)';
   } else {
     document.documentElement.classList.add('light');
     Chart.defaults.color='#436078';
     Chart.defaults.borderColor='rgba(30,60,120,.07)';
+    CHART_DEF.plugins.tooltip.backgroundColor='#ffffff';
+    CHART_DEF.plugins.tooltip.titleColor='#0f172a';
+    CHART_DEF.plugins.tooltip.bodyColor='#436078';
+    CHART_DEF.plugins.legend.labels.color='#436078';
+    CHART_DEF.scales.x.ticks.color='#476080';
+    CHART_DEF.scales.y.ticks.color='#476080';
+    CHART_DEF.scales.x.grid.color='rgba(30,60,120,.06)';
+    CHART_DEF.scales.y.grid.color='rgba(30,60,120,.06)';
   }
   const btn=document.getElementById('theme-btn');
   if(btn)btn.textContent=DARK_MODE?'☀️':'🌙';
