@@ -1,0 +1,1729 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ML Продажник Pro</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* ── Светлее фон: тёмный slate вместо почти чёрного ── */
+  --bg:#141c2e;--s1:#1a2540;--s2:#1e2b47;--s3:#243355;
+  --bord:rgba(255,255,255,.07);--bord2:rgba(255,255,255,.11);
+  --glass:rgba(255,255,255,.04);--glass2:rgba(255,255,255,.07);
+  --acc:#4f8ef7;--acc-d:rgba(79,142,247,.15);--acc-g:linear-gradient(135deg,#4f8ef7,#7c3aed);
+  --cy:#22d3ee;--cy-d:rgba(34,211,238,.13);
+  --hot:#f43f5e;--hot-d:rgba(244,63,94,.15);
+  --warm:#f59e0b;--warm-d:rgba(245,158,11,.15);
+  --gr:#10b981;--gr-d:rgba(16,185,129,.13);
+  --pu:#8b5cf6;--pu-d:rgba(139,92,246,.15);
+  --mt:#56709a;--tx:#c8daf0;--tx2:#7a94bb;--wh:#e8f1fb;
+  --fh:'Syne',sans-serif;--fm:'IBM Plex Mono',monospace;--fb:'DM Sans',sans-serif;
+  --rad:13px;--rad-sm:9px;
+  --shadow:0 4px 24px rgba(0,0,0,.25);--shadow-sm:0 2px 12px rgba(0,0,0,.2);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:var(--fb);background:var(--bg);color:var(--tx);}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:6px;}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.2);}
+#app{display:flex;height:100vh;}
+
+/* ═══════════════════ SIDEBAR ═══════════════════ */
+.sb{
+  width:224px;min-width:224px;
+  background:linear-gradient(180deg,#111827 0%,#0f1d35 100%);
+  border-right:1px solid rgba(255,255,255,.06);
+  display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:4px 0 20px rgba(0,0,0,.3);
+}
+.sb-logo{
+  padding:20px 18px 16px;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  background:rgba(255,255,255,.02);
+}
+.sb-logo-wrap{display:flex;align-items:center;gap:10px;}
+.sb-logo-ic{
+  width:34px;height:34px;border-radius:9px;
+  background:linear-gradient(135deg,#4f8ef7,#7c3aed);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;flex-shrink:0;box-shadow:0 4px 12px rgba(79,142,247,.35);
+}
+.sb-logo h1{font-family:var(--fh);font-size:15px;font-weight:800;color:var(--wh);letter-spacing:-.3px;line-height:1.2;}
+.sb-logo h1 span{background:var(--acc-g);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.sb-logo .ver{font-size:9px;color:var(--mt);font-family:var(--fm);margin-top:1px;letter-spacing:.5px;}
+
+.sb-kpi{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.05);}
+.skp{margin-bottom:11px;}.skp:last-child{margin-bottom:0;}
+.skp-l{font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.8px;margin-bottom:2px;}
+.skp-v{font-family:var(--fm);font-size:18px;font-weight:500;color:var(--wh);line-height:1.1;}
+.skp-s{font-size:10px;color:var(--tx2);margin-top:2px;}
+
+.sb-nav{flex:1;overflow-y:auto;padding:10px 8px;}
+.sb-section-lbl{
+  font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:1px;
+  padding:6px 10px 4px;margin-top:4px;
+}
+.ni{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 12px;border-radius:var(--rad-sm);
+  cursor:pointer;font-size:13px;font-weight:500;color:var(--tx2);
+  transition:all .18s;margin-bottom:2px;position:relative;
+  border:none;background:none;width:100%;text-align:left;
+}
+.ni:hover{background:var(--glass2);color:var(--tx);}
+.ni.on{
+  background:linear-gradient(135deg,rgba(79,142,247,.18),rgba(124,58,237,.12));
+  color:var(--wh);
+  border:1px solid rgba(79,142,247,.25);
+  box-shadow:0 2px 12px rgba(79,142,247,.1);
+}
+.ni.on::before{
+  content:'';position:absolute;left:-1px;top:50%;transform:translateY(-50%);
+  width:3px;height:20px;
+  background:linear-gradient(180deg,var(--acc),var(--pu));
+  border-radius:0 3px 3px 0;
+}
+.ni-ic{
+  font-size:15px;width:28px;height:28px;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:7px;background:var(--glass);flex-shrink:0;
+  transition:background .18s;
+}
+.ni.on .ni-ic{background:rgba(79,142,247,.15);}
+.ni:hover .ni-ic{background:var(--glass2);}
+.ni-badge{
+  margin-left:auto;font-size:10px;
+  background:linear-gradient(135deg,rgba(244,63,94,.25),rgba(244,63,94,.15));
+  color:var(--hot);border-radius:10px;padding:2px 8px;
+  font-family:var(--fm);border:1px solid rgba(244,63,94,.2);
+}
+.sb-sep{height:1px;background:rgba(255,255,255,.05);margin:8px 4px;}
+
+/* ═══════════════════ MAIN ═══════════════════ */
+.main{flex:1;overflow-y:auto;overflow-x:hidden;background:var(--bg);}
+.pg{padding:28px 30px;min-height:100%;}
+.pg-hd{margin-bottom:24px;display:flex;align-items:flex-start;justify-content:space-between;}
+.pg-hd-left{}
+.pg-ti{
+  font-family:var(--fh);font-size:24px;font-weight:700;color:var(--wh);letter-spacing:-.5px;
+  background:linear-gradient(135deg,#e8f1fb 30%,#7ab0f5);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.pg-su{font-size:12px;color:var(--tx2);margin-top:4px;}
+
+/* ═══════════════════ KPI CARDS ═══════════════════ */
+.kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+.kcard{
+  border-radius:var(--rad);padding:20px;position:relative;overflow:hidden;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  transition:transform .2s,box-shadow .2s;
+}
+.kcard:hover{transform:translateY(-2px);}
+
+/* Цветные варианты карточек */
+.kb{
+  background:linear-gradient(135deg,rgba(79,142,247,.18) 0%,rgba(79,142,247,.06) 100%);
+  border:1px solid rgba(79,142,247,.28);
+  box-shadow:0 4px 20px rgba(79,142,247,.12);
+}
+.kr{
+  background:linear-gradient(135deg,rgba(244,63,94,.18) 0%,rgba(244,63,94,.06) 100%);
+  border:1px solid rgba(244,63,94,.28);
+  box-shadow:0 4px 20px rgba(244,63,94,.1);
+}
+.kc{
+  background:linear-gradient(135deg,rgba(34,211,238,.15) 0%,rgba(34,211,238,.05) 100%);
+  border:1px solid rgba(34,211,238,.25);
+  box-shadow:0 4px 20px rgba(34,211,238,.09);
+}
+.kg{
+  background:linear-gradient(135deg,rgba(16,185,129,.15) 0%,rgba(16,185,129,.05) 100%);
+  border:1px solid rgba(16,185,129,.25);
+  box-shadow:0 4px 20px rgba(16,185,129,.09);
+}
+.kcard-ic{
+  width:36px;height:36px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:17px;margin-bottom:12px;
+}
+.kb .kcard-ic{background:rgba(79,142,247,.2);}
+.kr .kcard-ic{background:rgba(244,63,94,.2);}
+.kc .kcard-ic{background:rgba(34,211,238,.15);}
+.kg .kcard-ic{background:rgba(16,185,129,.15);}
+.kcard::after{
+  content:'';position:absolute;bottom:-20px;right:-20px;
+  width:90px;height:90px;border-radius:50%;opacity:.06;
+  filter:blur(20px);
+}
+.kb::after{background:var(--acc);}
+.kr::after{background:var(--hot);}
+.kc::after{background:var(--cy);}
+.kg::after{background:var(--gr);}
+.kl{font-size:10px;color:rgba(200,218,240,.6);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;}
+.kv{font-family:var(--fm);font-size:28px;font-weight:500;color:var(--wh);line-height:1;}
+.kt{font-size:11px;margin-top:6px;display:flex;align-items:center;gap:4px;}
+.kt.up{color:var(--gr);}.kt.dn{color:var(--hot);}.kt.fl{color:var(--mt);}
+
+/* ═══════════════════ CHART CARDS ═══════════════════ */
+.cc{
+  background:var(--s2);
+  border:1px solid var(--bord);
+  border-radius:var(--rad);padding:20px;
+  backdrop-filter:blur(8px);
+  transition:border-color .2s;
+}
+.cc:hover{border-color:rgba(255,255,255,.12);}
+.cc-ti{
+  font-size:12px;font-weight:600;color:var(--tx);
+  margin-bottom:16px;display:flex;align-items:center;gap:8px;
+}
+.cc-ti::before{content:'';width:3px;height:14px;background:var(--acc-g);border-radius:2px;flex-shrink:0;}
+.cc-ti span{color:var(--tx2);font-weight:400;margin-left:auto;}
+.cg2{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px;}
+.cg22{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+
+/* ═══════════════════ TABLE ═══════════════════ */
+.tw{
+  background:var(--s2);border:1px solid var(--bord);
+  border-radius:var(--rad);overflow:hidden;
+  box-shadow:var(--shadow-sm);
+}
+.tf{
+  padding:14px 16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+  border-bottom:1px solid var(--bord);
+  background:rgba(255,255,255,.02);
+}
+.tf select,.tf input{
+  background:rgba(255,255,255,.05);
+  border:1px solid var(--bord2);border-radius:var(--rad-sm);
+  padding:7px 12px;font-size:12px;color:var(--tx);
+  font-family:var(--fb);outline:none;transition:all .15s;
+}
+.tf select:focus,.tf input:focus{border-color:var(--acc);background:rgba(79,142,247,.08);}
+.tf select option{background:#1e2b47;}
+.tf input{min-width:200px;}
+table{width:100%;border-collapse:collapse;}
+thead{background:rgba(255,255,255,.03);}
+th{
+  padding:10px 14px;text-align:left;
+  font-size:10px;font-weight:700;color:var(--mt);
+  text-transform:uppercase;letter-spacing:.7px;
+  border-bottom:1px solid var(--bord);
+  cursor:pointer;user-select:none;white-space:nowrap;
+  transition:color .15s;
+}
+th:hover{color:var(--tx);}
+th.sort-asc::after{content:' ▲';color:var(--acc);}
+th.sort-desc::after{content:' ▼';color:var(--acc);}
+tbody tr:nth-child(even) td{background:rgba(255,255,255,.015);}
+td{padding:10px 14px;font-size:12.5px;border-bottom:1px solid rgba(255,255,255,.04);transition:background .1s;}
+tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:rgba(79,142,247,.07)!important;}
+.td-name{font-weight:600;color:var(--wh);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.td-mgr{color:var(--tx2);font-size:11px;}
+.td-mono{font-family:var(--fm);font-size:11px;}
+.td-grp{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--tx2);}
+
+/* ═══════════════════ BADGES ═══════════════════ */
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;font-family:var(--fm);}
+.bh{background:rgba(244,63,94,.15);color:#fb7185;border:1px solid rgba(244,63,94,.25);}
+.bw{background:rgba(245,158,11,.13);color:#fbbf24;border:1px solid rgba(245,158,11,.2);}
+.bc{background:rgba(86,112,154,.15);color:var(--mt);border:1px solid rgba(86,112,154,.2);}
+.pbar-wrap{display:inline-block;width:60px;height:5px;background:rgba(255,255,255,.08);border-radius:3px;vertical-align:middle;margin-right:7px;}
+.pbar-fill{height:5px;border-radius:3px;}
+.tup{color:var(--gr);font-size:11px;}.tdn{color:var(--hot);font-size:11px;}.tfl{color:var(--mt);font-size:11px;}
+
+/* ═══════════════════ MANAGER/CLIENT CARDS ═══════════════════ */
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;}
+.mgrc{
+  background:var(--s2);border:1px solid var(--bord);
+  border-radius:var(--rad);padding:18px;
+  transition:all .2s;
+}
+.mgrc:hover{border-color:rgba(79,142,247,.35);transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,0,0,.2);}
+.mgrc-nm{
+  font-weight:700;font-size:13px;color:var(--wh);
+  margin-bottom:12px;line-height:1.3;
+  padding-bottom:10px;border-bottom:1px solid var(--bord);
+}
+.ms{display:flex;justify-content:space-between;align-items:center;padding:5px 0;}
+.ms-l{font-size:11px;color:var(--mt);}
+.ms-v{font-family:var(--fm);font-size:12px;color:var(--tx);}
+.mgrc-bar{margin-top:12px;height:4px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden;}
+.mgrc-bar-fill{height:4px;background:linear-gradient(90deg,var(--hot),var(--warm));border-radius:3px;}
+
+.clic{
+  background:var(--s2);border:1px solid var(--bord);
+  border-radius:var(--rad);padding:16px;
+  transition:all .2s;
+}
+.clic:hover{
+  border-color:rgba(79,142,247,.35);
+  transform:translateY(-2px);
+  box-shadow:0 8px 24px rgba(0,0,0,.25);
+}
+.clic-nm{font-size:12px;font-weight:700;color:var(--wh);margin-bottom:2px;line-height:1.3;}
+.clic-mgr{font-size:10px;color:var(--mt);margin-bottom:10px;}
+.clic-bar{height:5px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden;margin-bottom:8px;}
+.clic-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
+.clic-stat-l{font-size:10px;color:var(--mt);}
+.clic-stat-v{font-size:11px;color:var(--tx);font-family:var(--fm);}
+
+/* ═══════════════════ UPLOAD ═══════════════════ */
+.up-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;background:radial-gradient(ellipse at 50% 40%,rgba(79,142,247,.07) 0%,transparent 70%);}
+.up-box{text-align:center;max-width:460px;width:100%;padding:24px;}
+.up-drop{
+  background:linear-gradient(135deg,rgba(255,255,255,.04),rgba(255,255,255,.02));
+  border:2px dashed rgba(255,255,255,.12);
+  border-radius:20px;padding:56px 44px;cursor:pointer;transition:all .25s;
+  backdrop-filter:blur(10px);
+}
+.up-drop:hover,.up-drop.drag{
+  border-color:var(--acc);
+  background:rgba(79,142,247,.08);
+  box-shadow:0 0 40px rgba(79,142,247,.12);
+}
+.up-ico{font-size:56px;margin-bottom:18px;}
+.up-h{font-family:var(--fh);font-size:22px;color:var(--wh);margin-bottom:8px;}
+.up-p{font-size:13px;color:var(--tx2);}
+.up-hint{font-size:11px;color:var(--mt);margin-top:5px;}
+.up-st{margin-top:16px;font-size:13px;color:var(--tx2);text-align:center;min-height:20px;}
+
+/* ═══════════════════ FORECAST ═══════════════════ */
+.heatmap-wrap{overflow-x:auto;}
+.hm-table{border-collapse:separate;border-spacing:3px;min-width:560px;}
+.hm-th{font-size:8px;color:var(--mt);font-weight:400;text-align:center;padding:0 1px 6px;min-width:30px;}
+.hm-rn{font-size:10px;color:var(--tx2);padding-right:10px;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis;}
+.hm-cell{width:30px;height:20px;border-radius:4px;cursor:default;}
+.hm-legend{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:11px;color:var(--mt);}
+.hm-lc{width:24px;height:12px;border-radius:3px;display:inline-block;}
+.rec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.recc{
+  background:var(--s2);border:1px solid var(--bord);
+  border-radius:var(--rad);padding:18px;
+}
+.recc-ti{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px;display:flex;align-items:center;gap:6px;}
+.reci{padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);}
+.reci:last-child{border-bottom:none;}
+.reci-n{font-size:12px;color:var(--tx);font-weight:500;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.reci-s{font-size:10px;color:var(--mt);}
+
+/* ═══════════════════ COMPARISON ═══════════════════ */
+.tabs{
+  display:flex;gap:2px;margin-bottom:20px;
+  border-bottom:1px solid var(--bord);
+}
+.tab{
+  padding:8px 18px;font-size:12px;font-weight:600;color:var(--mt);
+  background:none;border:none;cursor:pointer;
+  border-bottom:2px solid transparent;margin-bottom:-1px;
+  transition:all .18s;font-family:var(--fb);border-radius:6px 6px 0 0;
+}
+.tab:hover{color:var(--tx);background:rgba(255,255,255,.03);}
+.tab.on{color:var(--acc);border-bottom-color:var(--acc);}
+.cmp-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px;}
+.sel-a{
+  background:rgba(79,142,247,.08);border:1px solid rgba(79,142,247,.35);
+  border-radius:9px;padding:8px 14px;font-size:12px;color:var(--acc);
+  font-family:var(--fb);outline:none;transition:all .15s;
+}
+.sel-b{
+  background:rgba(34,211,238,.06);border:1px solid rgba(34,211,238,.3);
+  border-radius:9px;padding:8px 14px;font-size:12px;color:var(--cy);
+  font-family:var(--fb);outline:none;transition:all .15s;
+}
+.sel-a option,.sel-b option{background:#1e2b47;}
+.vs-lbl{font-size:18px;color:var(--mt);font-weight:600;}
+.cmp-table{width:100%;border-collapse:collapse;}
+.cmp-table td{padding:8px 14px;font-size:12px;border-bottom:1px solid rgba(255,255,255,.05);}
+.cmp-table td:first-child{color:var(--mt);}
+.cmp-table td.win{color:var(--gr);font-family:var(--fm);}
+.cmp-table td.los{color:var(--hot);font-family:var(--fm);}
+.cmp-table td.neu{color:var(--tx);font-family:var(--fm);}
+.qcard{
+  background:var(--s2);border:1px solid var(--bord);
+  border-radius:var(--rad);padding:16px;text-align:center;
+  transition:border-color .2s;
+}
+.qcard:hover{border-color:rgba(255,255,255,.12);}
+.qcard-l{font-size:10px;color:var(--mt);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;}
+.qcard-v{font-family:var(--fm);font-size:16px;color:var(--wh);font-weight:500;}
+.qcard-sub{font-size:11px;color:var(--tx2);margin:4px 0;}
+.qcard-tr{font-size:11px;}
+.no-data{text-align:center;padding:60px;color:var(--mt);font-size:13px;}
+.flt{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:18px;}
+.flt select,.flt input{
+  background:rgba(255,255,255,.05);border:1px solid var(--bord2);
+  border-radius:var(--rad-sm);padding:7px 12px;font-size:12px;color:var(--tx);
+  font-family:var(--fb);outline:none;transition:all .15s;
+}
+.flt select:focus,.flt input:focus{border-color:var(--acc);background:rgba(79,142,247,.08);}
+.flt select option{background:#1e2b47;}
+.flt input{min-width:200px;}
+.ch-wrap{position:relative;width:100%;}
+canvas{display:block;}
+
+/* MODAL */
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;display:flex;align-items:center;justify-content:center;animation:fdin .15s;}
+@keyframes fdin{from{opacity:0}to{opacity:1}}
+.modal{background:var(--s1);border:1px solid var(--bord2);border-radius:14px;width:680px;max-width:96vw;max-height:92vh;overflow-y:auto;padding:24px;position:relative;}
+.modal-cl{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--mt);font-size:18px;cursor:pointer;line-height:1;transition:color .15s;}
+.modal-cl:hover{color:var(--wh);}
+.modal-h{font-family:var(--fh);font-size:17px;font-weight:700;color:var(--wh);margin-bottom:4px;}
+.modal-sub{font-size:11px;color:var(--mt);margin-bottom:18px;}
+.modal-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;}
+.mkpi{background:var(--s2);border:1px solid var(--bord);border-radius:9px;padding:11px 14px;}
+.mkpi-l{font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.mkpi-v{font-family:var(--fm);font-size:16px;color:var(--wh);}
+
+/* AI INSIGHTS */
+.ai-card{background:linear-gradient(135deg,rgba(139,92,246,.08),rgba(59,130,246,.06));border:1px solid rgba(139,92,246,.25);border-radius:11px;padding:18px;margin-bottom:12px;}
+.ai-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.ai-hd-ic{font-size:16px;}
+.ai-hd-ti{font-size:12px;font-weight:600;color:var(--pu);}
+.ai-hd-badge{font-size:9px;font-family:var(--fm);background:rgba(139,92,246,.2);color:var(--pu);border-radius:10px;padding:2px 7px;margin-left:auto;}
+.ai-body{font-size:12.5px;color:var(--tx);line-height:1.7;}
+.ai-body strong{color:var(--wh);}
+.ai-loading{display:flex;align-items:center;gap:10px;color:var(--mt);font-size:12px;}
+.ai-dot{width:6px;height:6px;border-radius:50%;background:var(--pu);animation:pulse 1.2s infinite;}
+.ai-dot:nth-child(2){animation-delay:.2s;}.ai-dot:nth-child(3){animation-delay:.4s;}
+@keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--s1);border:1px solid var(--bord2);border-radius:9px;padding:12px 18px;font-size:12px;color:var(--tx);z-index:2000;animation:fdin .2s;box-shadow:0 4px 24px rgba(0,0,0,.4);}
+.toast.ok{border-color:var(--gr);color:var(--gr);}
+.toast.err{border-color:var(--hot);color:var(--hot);}
+
+/* CLIENT SORT BAR */
+.sort-bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
+.sort-btn{background:var(--s2);border:1px solid var(--bord);border-radius:7px;padding:5px 12px;font-size:11px;color:var(--mt);cursor:pointer;transition:all .15s;font-family:var(--fb);}
+.sort-btn:hover{border-color:var(--acc);color:var(--tx);}
+.sort-btn.on{border-color:var(--acc);color:var(--acc);background:var(--acc-d);}
+.sort-lbl{font-size:11px;color:var(--mt);}
+
+/* ═══ THEME TOGGLE BTN ═══ */
+.sb-logo-wrap{position:relative}
+.theme-btn{
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+  border-radius:8px;width:28px;height:28px;display:flex;align-items:center;
+  justify-content:center;cursor:pointer;font-size:13px;transition:all .2s;
+  flex-shrink:0;margin-left:auto;
+}
+.theme-btn:hover{background:rgba(79,142,247,.25);border-color:var(--acc);}
+
+/* ═══ LIGHT THEME ═══ */
+html.light{
+  --bg:#eef2f9;--s1:#ffffff;--s2:#f4f7fd;--s3:#e8eef8;
+  --bord:rgba(30,60,120,.10);--bord2:rgba(30,60,120,.16);
+  --glass:rgba(30,60,120,.04);--glass2:rgba(30,60,120,.08);
+  --tx:#1e293b;--tx2:#436078;--wh:#0f172a;--mt:#7a90ae;
+  --shadow:0 4px 24px rgba(0,0,0,.08);--shadow-sm:0 2px 12px rgba(0,0,0,.06);
+}
+html.light body{background:var(--bg);color:var(--tx);}
+html.light .sb{background:linear-gradient(180deg,#1c2d4d 0%,#111f36 100%)!important;}
+html.light .cc,html.light .tw,html.light .mgrc,html.light .clic,
+html.light .recc,html.light .qcard,html.light .modal,html.light .sort-btn{background:var(--s2)!important;}
+html.light .ai-card{background:linear-gradient(135deg,rgba(139,92,246,.05),rgba(59,130,246,.03))!important;}
+html.light .kcard.kb{background:linear-gradient(135deg,rgba(79,142,247,.10),rgba(79,142,247,.03))!important;}
+html.light .kcard.kr{background:linear-gradient(135deg,rgba(244,63,94,.10),rgba(244,63,94,.03))!important;}
+html.light .kcard.kc{background:linear-gradient(135deg,rgba(34,211,238,.08),rgba(34,211,238,.02))!important;}
+html.light .kcard.kg{background:linear-gradient(135deg,rgba(16,185,129,.08),rgba(16,185,129,.02))!important;}
+html.light .tf select,html.light .tf input,html.light .flt select,html.light .flt input,
+html.light .sel-a,html.light .sel-b{background:rgba(255,255,255,.9)!important;color:var(--tx)!important;}
+html.light .tf select option,html.light .flt select option{background:#fff!important;color:#1e293b!important;}
+html.light tbody tr:nth-child(even) td{background:rgba(30,60,120,.025)!important;}
+html.light ::-webkit-scrollbar-thumb{background:rgba(30,60,120,.18);}
+html.light .pf-bar{background:var(--s2)!important;border-color:var(--bord)!important;}
+html.light .rfm-info-card,html.light .rfm-seg,html.light .abc-cell,html.light .ltv-formula{background:var(--s2)!important;}
+html.light .theme-btn{background:rgba(30,60,120,.08);border-color:rgba(30,60,120,.15);}
+
+/* ═══ MOBILE ═══ */
+@media(max-width:860px){
+  html,body{height:auto!important;overflow:auto!important;}
+  #app{flex-direction:column;height:auto!important;min-height:100vh;}
+  .sb{width:100%!important;min-width:unset!important;height:auto!important;flex-direction:column;
+    border-right:none!important;border-bottom:1px solid rgba(255,255,255,.07);overflow:visible!important;}
+  .sb-nav{display:flex;flex-direction:row;flex-wrap:nowrap;overflow-x:auto;padding:6px 8px;gap:2px;}
+  .sb-sep{display:none!important;}
+  .sb-kpi{display:none!important;}
+  .ni{padding:7px 10px;white-space:nowrap;font-size:11px;min-width:0;}
+  .ni-ic{width:20px;height:20px;font-size:11px;}
+  .main{overflow:visible!important;}
+  .pg{padding:14px 10px;}
+  .kgrid{grid-template-columns:repeat(2,1fr)!important;}
+  .cg2,.cg22{grid-template-columns:1fr!important;}
+  .rec-grid{grid-template-columns:1fr!important;}
+  .cgrid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))!important;}
+  .modal-kpis{grid-template-columns:repeat(2,1fr)!important;}
+  .tabs{overflow-x:auto;flex-wrap:nowrap;}
+  .tab{white-space:nowrap;}
+  .rfm-seg-grid{grid-template-columns:repeat(2,1fr)!important;}
+  .rfm-info-grid{grid-template-columns:1fr!important;}
+  .abc-matrix-wrap{overflow-x:auto;}
+  .cohort-wrap{overflow-x:auto;}
+}
+@media(max-width:480px){
+  .kv{font-size:21px!important;}
+  .ni-ic{display:none;}
+}
+
+/* ═══ PERIOD FILTER BAR ═══ */
+.pf-bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:18px;
+  padding:10px 14px;background:var(--s2);border:1px solid var(--bord);border-radius:var(--rad-sm);}
+.pf-lbl{font-size:10px;color:var(--mt);text-transform:uppercase;letter-spacing:.5px;margin-right:2px;white-space:nowrap;}
+.pf-btn{background:transparent;border:1px solid var(--bord2);border-radius:6px;padding:4px 11px;
+  font-size:11px;color:var(--tx2);cursor:pointer;transition:all .15s;font-family:var(--fb);}
+.pf-btn:hover{border-color:var(--acc);color:var(--tx);}
+.pf-btn.on{border-color:var(--acc);color:var(--acc);background:var(--acc-d);}
+
+/* ═══ RFM ═══ */
+.rfm-info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;}
+.rfm-info-card{background:var(--s2);border:1px solid var(--bord);border-radius:var(--rad);padding:14px 16px;}
+.rfm-info-letter{font-family:var(--fm);font-size:26px;font-weight:700;line-height:1;margin-bottom:5px;}
+.rfm-info-desc{font-size:11px;color:var(--tx2);line-height:1.5;}
+.rfm-seg-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:18px;}
+.rfm-seg{background:var(--s2);border:1px solid var(--bord);border-radius:9px;padding:12px 6px;text-align:center;transition:border-color .15s;}
+.rfm-seg:hover{border-color:rgba(255,255,255,.2);}
+.rfm-seg-ic{font-size:18px;margin-bottom:4px;}
+.rfm-seg-name{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px;color:var(--tx2);}
+.rfm-seg-cnt{font-family:var(--fm);font-size:17px;color:var(--wh);}
+.rfm-seg-rev{font-size:9px;color:var(--mt);margin-top:2px;}
+.rfm-score-wrap{display:inline-flex;gap:3px;}
+.rfm-sc{display:inline-block;padding:1px 5px;border-radius:4px;font-family:var(--fm);font-size:10px;background:var(--s3);}
+
+/* ═══ ABC/XYZ ═══ */
+.abc-matrix-wrap{overflow-x:auto;margin-bottom:18px;}
+.abc-matrix{min-width:420px;border-collapse:separate;border-spacing:6px;}
+.abc-cell{padding:12px;border-radius:9px;text-align:center;border:1px solid var(--bord);background:var(--s2);transition:transform .15s,border-color .15s;cursor:pointer;vertical-align:middle;}
+.abc-cell:hover{transform:scale(1.03);border-color:rgba(255,255,255,.2);}
+.abc-cell-code{font-family:var(--fm);font-size:17px;font-weight:700;margin-bottom:3px;}
+.abc-cell-cnt{font-size:11px;color:var(--tx2);}
+.abc-cell-rev{font-family:var(--fm);font-size:10px;margin-top:2px;}
+.abc-cell-desc{font-size:9px;color:var(--mt);margin-top:3px;line-height:1.3;}
+.abadge{display:inline-block;padding:2px 7px;border-radius:5px;font-size:10px;font-family:var(--fm);font-weight:700;}
+.ba{background:rgba(16,185,129,.15);color:#34d399;border:1px solid rgba(16,185,129,.25);}
+.bb{background:rgba(245,158,11,.12);color:#fbbf24;border:1px solid rgba(245,158,11,.2);}
+.bc{background:rgba(86,112,154,.12);color:var(--mt);border:1px solid rgba(86,112,154,.2);}
+.bx{background:rgba(79,142,247,.12);color:#7ab0f5;border:1px solid rgba(79,142,247,.2);}
+.by{background:rgba(139,92,246,.12);color:#a78bfa;border:1px solid rgba(139,92,246,.2);}
+.bz{background:rgba(244,63,94,.12);color:#fb7185;border:1px solid rgba(244,63,94,.2);}
+
+/* ═══ LTV ═══ */
+.ltv-formula{background:linear-gradient(135deg,rgba(79,142,247,.07),rgba(139,92,246,.05));
+  border:1px solid rgba(79,142,247,.2);border-radius:var(--rad);
+  padding:14px 18px;margin-bottom:18px;font-size:12px;color:var(--tx2);line-height:1.8;}
+.ltv-formula strong{color:var(--tx);font-family:var(--fm);}
+
+/* ═══ COHORTS ═══ */
+.cohort-table{border-collapse:separate;border-spacing:2px;min-width:660px;}
+.cohort-th{font-size:9px;color:var(--mt);text-align:center;padding:2px 3px;font-weight:400;white-space:nowrap;}
+.cohort-rn{font-size:10px;color:var(--tx2);padding-right:8px;white-space:nowrap;max-width:80px;overflow:hidden;text-overflow:ellipsis;}
+.cohort-cell{width:34px;height:24px;border-radius:4px;font-size:9px;font-family:var(--fm);
+  text-align:center;cursor:default;line-height:24px;transition:transform .1s;}
+.cohort-cell:hover{transform:scale(1.18);z-index:2;position:relative;}
+
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="sb" id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-wrap">
+        <div class="sb-logo-ic">📊</div>
+        <button class="theme-btn" id="theme-btn" title="Тема">☀️</button>
+        <div>
+          <h1>ML <span>Продажник</span></h1>
+          <div class="ver">PRO · v4.0</div>
+        </div>
+      </div>
+    </div>
+    <div class="sb-kpi" id="sb-kpi" style="display:none">
+      <div class="skp"><div class="skp-l">Клиентов</div><div class="skp-v" id="sk-cli">—</div></div>
+      <div class="skp"><div class="skp-l">Выручка</div><div class="skp-v" id="sk-rev">—</div></div>
+      <div class="skp"><div class="skp-l">Горячих</div><div class="skp-v" id="sk-hot" style="color:var(--hot)">—</div><div class="skp-s" id="sk-hotp"></div></div>
+    </div>
+    <nav class="sb-nav" id="sb-nav"></nav>
+  </div>
+  <div class="main" id="main"></div>
+</div>
+
+<script>
+// ─── CONSTANTS ────────────────────────────────────────────────────────────
+const ML=['Янв.25','Фев.25','Мар.25','Апр.25','Май.25','Июн.25',
+  'Июл.25','Авг.25','Сен.25','Окт.25','Ноя.25','Дек.25','Янв.26','Фев.26','Мар.26'];
+const COL=[4,6,7,8,9,10,11,12,13,14,15,16,17,18,19];
+const PC=['#4f8ef7','#22d3ee','#10b981','#f59e0b','#f43f5e','#8b5cf6','#06b6d4',
+  '#84cc16','#fb923c','#e879f9','#34d399','#fbbf24','#f87171','#a78bfa','#67e8f9'];
+const CHART_DEF={color:'#c8daf0',borderColor:'rgba(255,255,255,.06)',
+  plugins:{legend:{labels:{color:'#7a94bb',font:{size:11}}},tooltip:{backgroundColor:'#1a2540',borderColor:'rgba(255,255,255,.1)',borderWidth:1,titleColor:'#e8f1fb',bodyColor:'#7a94bb',padding:12,cornerRadius:8}},
+  scales:{x:{ticks:{color:'#56709a',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'},border:{display:false}},
+    y:{ticks:{color:'#56709a',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'},border:{display:false}}}};
+
+// ─── STATE ────────────────────────────────────────────────────────────────
+let DATA=[];
+let PAGE='upload';
+const CHARTS={};
+let DARK_MODE=true;
+let OV_PERIOD='all';
+
+// ─── PARSING ──────────────────────────────────────────────────────────────
+function isMan(n){return n.includes('(НБВ');}
+
+// Артикул: строка заканчивается на «, XXXXXX» где 4+ цифр
+function isProd(n){return /,\s*\d{4,}\s*$/.test(n);}
+
+// ИСПРАВЛЕНО: \b не работает с кириллицей в JS (кирилл. буквы — \W, граница не срабатывает).
+// Используем includes() и явные разделители
+const LEGAL=['ООО','ЗАО','ОАО','ПАО','НКО','ФГУП','МУП','ТОО'];
+const LEGAL_SHORT=[' АО ',' АО,','(АО)','ИП ','ИП,','ИП.','(ИП)','И.П.',' ИП'];
+
+function hasLegalForm(u){
+  for(const f of LEGAL){if(u.includes(f))return true;}
+  for(const f of LEGAL_SHORT){if(u.includes(f))return true;}
+  // ИП в начале строки
+  if(u.startsWith('ИП '))return true;
+  return false;
+}
+
+// Физическое лицо: «Фамилия Имя Отчество» (отчество оканчивается на -ович/-евич/-овна/-евна/-ич/-ина)
+function isPhysPerson(n){
+  return /[А-ЯЁ][а-яё]+\s+[А-ЯЁ][а-яё]+\s+[А-ЯЁ][а-яё]+(ович|евич|овна|евна|ич|ина)/.test(n);
+}
+
+// Проверка — может ли строка быть клиентом (не первая после менеджера)
+function couldBeCli(n){
+  if(isMan(n)||isProd(n))return false;
+  const u=n.toUpperCase();
+  if(hasLegalForm(u))return true;
+  if(/ Г,/.test(u)||/\sГ\s*,/.test(u)||n.endsWith(' г.')||n.endsWith(' г'))return true;
+  if(isPhysPerson(n))return true;
+  return false;
+}
+
+function pn(s){
+  if(s===null||s===undefined)return 0;
+  if(typeof s==='number')return isNaN(s)?0:s;
+  const v=parseFloat(String(s).replace(/\s/g,'').replace(',','.'));
+  return isNaN(v)?0:v;
+}
+
+// Общий парсер строк — state machine вместо хрупкого isCli
+// Состояния: 'need_client' (после менеджера) | 'in_client' | 'in_group'
+function parseRows(rows){
+  const map={};
+  let mgr='',ck='';
+  let state='need_client'; // начальное состояние
+
+  for(const c of rows){
+    const nm=String(c[0]||'').trim();if(!nm)continue;
+
+    // --- Менеджер ---
+    if(isMan(nm)){
+      mgr=nm.replace(/\(НБВ\s*\d+\)\s*/i,'').trim();
+      ck='';
+      state='need_client';
+      continue;
+    }
+
+    // --- Артикул товара ---
+    if(isProd(nm)){
+      if(ck&&map[ck]){
+        const t=COL.reduce((s,ci)=>s+pn(c[ci]),0);
+        if(t>0){const g=map[ck]._lg||'Прочее';map[ck].prod[g]=(map[ck].prod[g]||0)+t;}
+      }
+      continue;
+    }
+
+    // --- Прочая строка: клиент или товарная группа ---
+    if(state==='need_client'){
+      // Первая строка после менеджера ВСЕГДА клиент — независимо от формата имени
+      ck=nm+'\x00'+mgr;
+      if(!map[ck])map[ck]={name:nm,mgr,mo:COL.map(ci=>pn(c[ci])),prod:{},_lg:''};
+      state='in_client';
+    } else if(state==='in_client'||state==='in_group'){
+      // Либо новый клиент, либо товарная группа
+      if(couldBeCli(nm)){
+        // Это новый клиент
+        ck=nm+'\x00'+mgr;
+        if(!map[ck])map[ck]={name:nm,mgr,mo:COL.map(ci=>pn(c[ci])),prod:{},_lg:''};
+        state='in_client';
+      } else {
+        // Это товарная группа — запомнить как _lg
+        if(ck&&map[ck])map[ck]._lg=nm;
+        state='in_group';
+      }
+    }
+  }
+  return Object.values(map);
+}
+
+// CSV → rows[][]
+function parseCSV(txt){
+  const lines=txt.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').slice(13);
+  return parseRows(lines.filter(l=>l.trim()).map(l=>l.split(';')));
+}
+
+// XLSX → rows[][] (через SheetJS)
+function parseXLSX(ab){
+  const wb=XLSX.read(ab,{type:'array',cellText:false,cellDates:false});
+  const ws=wb.Sheets[wb.SheetNames[0]];
+  // sheet_to_json с header:1 → массив массивов
+  const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:true});
+  return parseRows(rows.slice(13));
+}
+function compute(raw){
+  const act=raw.filter(c=>c.mo.reduce((a,b)=>a+b,0)>0);
+  const tots=act.map(c=>c.mo.reduce((a,b)=>a+b,0));
+  const mx=Math.max(...tots,1);
+  return act.map((c,i)=>{
+    const m=c.mo,tot=tots[i],freq=m.filter(v=>v>0).length;
+    let rec=-1;for(let j=m.length-1;j>=0;j--){if(m[j]>0){rec=j;break;}}
+    const l3=m.slice(-3).reduce((a,b)=>a+b,0),p3=m.slice(-6,-3).reduce((a,b)=>a+b,0);
+    const tr=p3>0?(l3-p3)/p3:(l3>0?1:0);
+    const raw2=Math.min(100,Math.max(0,(rec/14)*35+(freq/15)*30+Math.max(0,Math.min(20,tr*20+10))+(tot/mx)*15));
+    const prob=raw2/100;
+    const avgI=freq>1?Math.round(15/freq):2;
+    const nd=Math.max(0,Math.round((avgI-(14-rec))*30));
+    const te=Object.entries(c.prod).sort((a,b)=>b[1]-a[1])[0];
+    return{name:c.name,mgr:c.mgr,prob,total:tot,mo:m,rec,tr,nd,
+      tg:te?te[0]:(c._lg||'Нет данных'),prod:c.prod};
+  }).sort((a,b)=>b.prob-a.prob);
+}
+function fmt(v){if(v>=1e6)return(v/1e6).toFixed(1)+' млн';if(v>=1e3)return(v/1e3).toFixed(0)+' тыс';return Math.round(v)+'';}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function pct(p){return Math.round(p*100);}
+function bclass(p){const pp=pct(p);return pp>=70?'bh':pp>=40?'bw':'bc';}
+function trendHtml(tr){
+  if(tr>0.1)return`<span class="tup">▲ ${Math.round(tr*100)}%</span>`;
+  if(tr<-0.1)return`<span class="tdn">▼ ${Math.round(Math.abs(tr)*100)}%</span>`;
+  return`<span class="tfl">→ стабильно</span>`;}
+function pbHtml(prob){
+  const p=pct(prob),col=p>=70?'var(--hot)':p>=40?'var(--warm)':'var(--mt)';
+  return`<span class="pbar-wrap"><span class="pbar-fill" style="width:${p}%;background:${col}"></span></span><span class="badge ${bclass(prob)}">${p}%</span>`;}
+function nextTxt(nd){return nd===0?'⚡ Сейчас':'≈'+nd+' дн.';}
+function destroyChart(id){if(CHARTS[id]){CHARTS[id].destroy();delete CHARTS[id];}}
+
+// ─── TOAST ────────────────────────────────────────────────────────────────
+function toast(msg,type=''){
+  const t=document.createElement('div');
+  t.className='toast'+(type?' '+type:'');t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .3s';setTimeout(()=>t.remove(),300);},2400);}
+
+// ─── CLIENT MODAL ─────────────────────────────────────────────────────────
+function showClientModal(r){
+  const ov=document.createElement('div');ov.className='modal-ov';
+  const p=pct(r.prob),col=p>=70?'var(--hot)':p>=40?'var(--warm)':'var(--mt)';
+  const lastBuy=r.rec>=0?ML[r.rec]:'—';
+  const prods=Object.entries(r.prod).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  ov.innerHTML=`<div class="modal">
+    <button class="modal-cl" id="mc-cls">✕</button>
+    <div class="modal-h">${esc(r.name)}</div>
+    <div class="modal-sub">${esc(r.mgr)} &nbsp;·&nbsp; ${r.tg||'—'}</div>
+    <div class="modal-kpis">
+      <div class="mkpi"><div class="mkpi-l">Вероятность</div><div class="mkpi-v" style="color:${col}">${p}%</div></div>
+      <div class="mkpi"><div class="mkpi-l">Выручка</div><div class="mkpi-v">${fmt(r.total)}</div></div>
+      <div class="mkpi"><div class="mkpi-l">Посл. покупка</div><div class="mkpi-v">${lastBuy}</div></div>
+      <div class="mkpi"><div class="mkpi-l">Следующая</div><div class="mkpi-v">${nextTxt(r.nd)}</div></div>
+    </div>
+    <div class="cc" style="margin-bottom:14px"><div class="cc-ti">Динамика продаж <span>руб.</span></div><div class="ch-wrap" style="height:170px"><canvas id="mc-chart"></canvas></div></div>
+    ${prods.length?`<div class="cc"><div class="cc-ti">Товарные группы <span>топ-6</span></div>
+      ${prods.map((d,i)=>{const tot=r.total||1;return`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(27,42,61,.5)">
+        <div style="width:8px;height:8px;border-radius:2px;background:${PC[i%PC.length]};flex-shrink:0"></div>
+        <div style="flex:1;font-size:11px;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(d[0])}</div>
+        <div style="font-family:var(--fm);font-size:11px;color:var(--tx2)">${fmt(d[1])}</div>
+        <div style="font-size:10px;color:var(--mt);width:32px;text-align:right">${Math.round(d[1]/tot*100)}%</div>
+      </div>`;}).join('')}
+    </div>`:''}
+  </div>`;
+  document.body.appendChild(ov);
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+  document.getElementById('mc-cls').addEventListener('click',()=>ov.remove());
+  const ctx=document.getElementById('mc-chart');
+  new Chart(ctx,{type:'bar',data:{labels:ML,datasets:[{label:'Выручка',data:r.mo,backgroundColor:r.mo.map((v,i)=>i>=12?'rgba(139,92,246,.6)':'rgba(59,130,246,.5)'),borderRadius:3}]},options:{maintainAspectRatio:false,plugins:{...CHART_DEF.plugins,legend:{display:false}},scales:{x:{ticks:{color:'#4b6282',font:{size:8}},grid:{color:'#1b2a3d'},border:{display:false}},y:{ticks:{color:'#4b6282',font:{size:9}},grid:{color:'#1b2a3d'},border:{display:false}}}}});
+}
+
+// ─── EXPORT XLSX ──────────────────────────────────────────────────────────
+function exportScoringXLSX(rows){
+  const hdr=['#','Клиент','Менеджер','Вероятность %','Выручка ₽','Посл. покупка','Тренд','Топ группа','Следующая покупка'];
+  const data=[hdr,...rows.map((r,i)=>[
+    i+1,r.name,r.mgr,pct(r.prob),r.total,r.rec>=0?ML[r.rec]:'—',
+    r.tr>0.1?`▲ ${Math.round(r.tr*100)}%`:r.tr<-0.1?`▼ ${Math.round(Math.abs(r.tr)*100)}%`:'→ стабильно',
+    r.tg,nextTxt(r.nd)])];
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  ws['!cols']=[{wch:4},{wch:40},{wch:22},{wch:14},{wch:14},{wch:12},{wch:12},{wch:28},{wch:16}];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'ML Скоринг');
+  XLSX.writeFile(wb,'ML_Скоринг_'+new Date().toLocaleDateString('ru').replace(/\./g,'-')+'.xlsx');
+  toast('✅ Экспорт выполнен','ok');}
+
+// ─── AI INSIGHTS ──────────────────────────────────────────────────────────
+async function loadAIInsights(el){
+  el.innerHTML=`<div class="ai-loading"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div><span>Анализирую данные...</span></div>`;
+  try{
+    const hot=DATA.filter(r=>r.prob>=.7).length;
+    const warm=DATA.filter(r=>r.prob>=.4&&r.prob<.7).length;
+    const cold=DATA.length-hot-warm;
+    const rev=DATA.reduce((s,r)=>s+r.total,0);
+    const mgrMap={};DATA.forEach(r=>{if(!mgrMap[r.mgr])mgrMap[r.mgr]=0;mgrMap[r.mgr]+=r.total;});
+    const topMgr=Object.entries(mgrMap).sort((a,b)=>b[1]-a[1])[0];
+    const topCli=DATA[0];
+    const riskCnt=DATA.filter(r=>{const l=r.mo.slice(-3).reduce((a,b)=>a+b,0),p=r.mo.slice(-6,-3).reduce((a,b)=>a+b,0);return p>0&&l<p*.5;}).length;
+    const mdata=ML.map((l,i)=>DATA.reduce((s,r)=>(r.mo[i]||0)+s,0));
+    const lastMRev=mdata[14],prevMRev=mdata[13];
+    const mgrCount=Object.keys(mgrMap).length;
+    const prompt=`Ты — аналитик продаж. Дай краткие (3-4 пункта) инсайты по базе клиентов. Используй только HTML-теги <strong> для выделения. Ответ — только пункты, без вступления, каждый с новой строки начинается с «• ».
+
+Данные:
+- Всего клиентов: ${DATA.length} (у ${mgrCount} менеджеров)
+- Горячих (70%+): ${hot} (${Math.round(hot/DATA.length*100)}%), тёплых: ${warm}, холодных: ${cold}
+- Общая выручка: ${fmt(rev)}, последний месяц: ${fmt(lastMRev)} vs предыдущий: ${fmt(prevMRev)}
+- Топ-менеджер: ${topMgr?topMgr[0]:'-'} (${topMgr?fmt(topMgr[1]):'-'})
+- Топ-клиент: ${topCli?topCli.name:'-'} (${topCli?fmt(topCli.total):'-'})
+- Клиентов под риском оттока: ${riskCnt}`;
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const d=await resp.json();
+    const txt=(d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    el.innerHTML=txt?txt.replace(/\n/g,'<br>'):'<span style="color:var(--mt)">Нет данных для анализа.</span>';
+  }catch(e){el.innerHTML='<span style="color:var(--mt)">Не удалось загрузить инсайты.</span>';}
+}
+
+// ─── SIDEBAR ──────────────────────────────────────────────────────────────
+const PAGES=[
+  {id:'overview',ic:'📊',lb:'Обзор'},
+  {id:'scoring',ic:'🤖',lb:'ML Скоринг'},
+  {id:'managers',ic:'👥',lb:'Менеджеры'},
+  {id:'clients',ic:'🏢',lb:'Клиенты'},
+  {id:'products',ic:'📦',lb:'Товары'},
+  {id:'rfm',ic:'🎯',lb:'RFM'},
+  {id:'abcxyz',ic:'🔢',lb:'ABC/XYZ'},
+  {id:'ltv',ic:'💎',lb:'LTV'},
+  {id:'cohorts',ic:'🧩',lb:'Когорты'},
+  {id:'forecast',ic:'🔮',lb:'Прогноз'},
+  {id:'compare',ic:'⚖️',lb:'Сравнение'},
+];
+function buildSidebar(){
+  const hot=DATA.filter(r=>r.prob>=.7).length;
+  const nav=document.getElementById('sb-nav');
+  nav.innerHTML=PAGES.map(p=>`
+    <button class="ni ${PAGE===p.id?'on':''}" data-page="${p.id}">
+      <span class="ni-ic">${p.ic}</span>${p.lb}
+      ${p.id==='scoring'&&hot>0?`<span class="ni-badge">${hot}</span>`:''}
+    </button>`).join('')+`
+    <div class="sb-sep"></div>
+    <button class="ni" id="btn-reload"><span class="ni-ic">📂</span>Новый файл</button>`;
+  nav.querySelectorAll('[data-page]').forEach(btn=>{
+    btn.addEventListener('click',()=>{PAGE=btn.dataset.page;buildSidebar();renderPage();});});
+  const rb=document.getElementById('btn-reload');
+  if(rb)rb.addEventListener('click',()=>{DATA=[];PAGE='upload';buildSidebar();renderPage();});
+  const rev=DATA.reduce((s,r)=>s+r.total,0);
+  const kpi=document.getElementById('sb-kpi');
+  if(DATA.length&&kpi){
+    kpi.style.display='';
+    document.getElementById('sk-cli').textContent=DATA.length;
+    document.getElementById('sk-rev').textContent=(rev/1e6).toFixed(1)+'M ₽';
+    document.getElementById('sk-hot').textContent=hot;
+    document.getElementById('sk-hotp').textContent=Math.round(hot/DATA.length*100)+'% базы готовы';
+  }
+}
+
+// ─── ROUTER ───────────────────────────────────────────────────────────────
+function renderPage(){
+  Object.keys(CHARTS).forEach(k=>{CHARTS[k].destroy();delete CHARTS[k];});
+  const m=document.getElementById('main');
+  if(!DATA.length){m.innerHTML=uploadHTML();initUpload();return;}
+  buildSidebar();
+  if(PAGE==='overview')renderOverview(m);
+  else if(PAGE==='scoring')renderScoring(m);
+  else if(PAGE==='managers')renderManagers(m);
+  else if(PAGE==='clients')renderClients(m);
+  else if(PAGE==='products')renderProducts(m);
+  else if(PAGE==='rfm')renderRFM(m);
+  else if(PAGE==='abcxyz')renderABCXYZ(m);
+  else if(PAGE==='ltv')renderLTV(m);
+  else if(PAGE==='cohorts')renderCohorts(m);
+  else if(PAGE==='forecast')renderForecast(m);
+  else if(PAGE==='compare')renderCompare(m);
+}
+
+// ─── UPLOAD ───────────────────────────────────────────────────────────────
+function uploadHTML(){
+  return`<div class="up-wrap"><div class="up-box">
+    <div class="up-drop" id="up-drop">
+      <div class="up-ico">📊</div>
+      <div class="up-h">ML Продажник Pro</div>
+      <p class="up-p">Загрузи выгрузку из 1С</p>
+      <div class="up-hint" style="margin-bottom:12px">Поддерживаются форматы:</div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <span style="background:rgba(59,130,246,.15);color:#3b82f6;border-radius:6px;padding:4px 12px;font-size:12px;font-family:var(--fm)">📗 XLSX (Excel)</span>
+        <span style="background:rgba(34,211,238,.12);color:#22d3ee;border-radius:6px;padding:4px 12px;font-size:12px;font-family:var(--fm)">📄 CSV (Win-1251)</span>
+      </div>
+      <div class="up-hint" style="margin-top:10px">Разделитель «;» · Формат НСК</div>
+    </div>
+    <div class="up-st" id="up-st"></div>
+    <input type="file" id="up-fi" accept=".csv,.xlsx,.xlsm,.xls" style="display:none">
+  </div></div>`;}
+
+function initUpload(){
+  const drop=document.getElementById('up-drop');
+  const fi=document.getElementById('up-fi');
+  const st=document.getElementById('up-st');
+  drop.addEventListener('click',()=>fi.click());
+  drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag');});
+  drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
+  drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('drag');loadFile(e.dataTransfer.files[0]);});
+  fi.addEventListener('change',e=>loadFile(e.target.files[0]));
+
+  function loadFile(f){
+    if(!f)return;
+    const ext=f.name.split('.').pop().toLowerCase();
+    st.textContent='⏳ Читаем файл...';
+
+    if(ext==='csv'){
+      const r=new FileReader();
+      r.onload=e=>{st.textContent='⚙️ Разбираем данные...';
+        setTimeout(()=>{
+          try{const raw=parseCSV(e.target.result);processRaw(raw,st);}
+          catch(err){st.textContent='❌ Ошибка: '+err.message;}
+        },60);};
+      r.readAsText(f,'windows-1251');
+    } else if(ext==='xlsx'||ext==='xlsm'||ext==='xls'){
+      const r=new FileReader();
+      r.onload=e=>{st.textContent='⚙️ Разбираем XLSX...';
+        setTimeout(()=>{
+          try{const raw=parseXLSX(new Uint8Array(e.target.result));processRaw(raw,st);}
+          catch(err){st.textContent='❌ Ошибка: '+err.message;}
+        },60);};
+      r.readAsArrayBuffer(f);
+    } else {
+      st.textContent='❌ Неподдерживаемый формат. Нужен .xlsx или .csv';
+    }
+  }
+
+  function processRaw(raw,st){
+    const res=compute(raw);
+    if(!res.length){st.textContent='❌ Клиенты не найдены. Проверь формат файла.';return;}
+    DATA=res;PAGE='overview';buildSidebar();renderPage();
+  }
+}
+
+// ─── OVERVIEW ─────────────────────────────────────────────────────────────
+function getOvIdxRange(){
+  if(OV_PERIOD==='2025')return[0,11];
+  if(OV_PERIOD==='2026')return[12,14];
+  if(OV_PERIOD==='last6')return[9,14];
+  if(OV_PERIOD==='last3')return[12,14];
+  return[0,14];
+}
+function renderOverview(m){
+  const[s,e]=getOvIdxRange();
+  const ML2=ML.slice(s,e+1);
+  const hot=DATA.filter(r=>r.prob>=.7).length;
+  const warm=DATA.filter(r=>r.prob>=.4&&r.prob<.7).length;
+  const rev=DATA.reduce((ss,r)=>ss+r.mo.slice(s,e+1).reduce((a,b)=>a+b,0),0);
+  const mgrs=[...new Set(DATA.map(r=>r.mgr))].length;
+  const mdata=ML2.map((_,i)=>DATA.reduce((ss,r)=>(r.mo[s+i]||0)+ss,0)/1000);
+  const lm=mdata[mdata.length-1]||0,pm=mdata.length>1?(mdata[mdata.length-2]||0):0;
+  const rtr=pm>0?((lm-pm)/pm*100):0;
+  const top10=DATA.slice(0,10);
+  const mgrMap={};DATA.forEach(r=>{if(!mgrMap[r.mgr])mgrMap[r.mgr]=0;mgrMap[r.mgr]+=r.mo.slice(s,e+1).reduce((a,b)=>a+b,0);});
+  const mgrArr=Object.entries(mgrMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const pfLabels={'all':'Все 15 мес.','2025':'2025 год','2026':'2026 Q1','last6':'Посл. 6 мес.','last3':'Посл. 3 мес.'};
+  m.innerHTML='<div class="pg">'
+    +'<div class="pg-hd"><div class="pg-ti">Общий обзор</div><div class="pg-su">Сводная аналитика · '+DATA.length+' клиентов · '+mgrs+' менеджеров</div></div>'
+    +'<div class="pf-bar"><span class="pf-lbl">Период:</span>'
+    +Object.keys(pfLabels).map(k=>'<button class="pf-btn'+(OV_PERIOD===k?' on':'')+'" data-pf="'+k+'">'+pfLabels[k]+'</button>').join('')
+    +'</div>'
+    +'<div class="ai-card" style="margin-bottom:20px"><div class="ai-hd"><span class="ai-hd-ic">🤖</span><span class="ai-hd-ti">AI-аналитик</span><span class="ai-hd-badge">Claude</span></div><div class="ai-body" id="ai-insights-body"></div></div>'
+    +'<div class="kgrid">'
+    +'<div class="kcard kb"><div class="kcard-ic">👥</div><div class="kl">Клиентов всего</div><div class="kv">'+DATA.length+'</div><div class="kt fl">'+mgrs+' менеджеров</div></div>'
+    +'<div class="kcard kr"><div class="kcard-ic">🔥</div><div class="kl">Горячих 70%+</div><div class="kv">'+hot+'</div><div class="kt up">⚡ '+Math.round(hot/DATA.length*100)+'% базы</div></div>'
+    +'<div class="kcard kc"><div class="kcard-ic">⚡</div><div class="kl">Тёплых 40–70%</div><div class="kv">'+warm+'</div><div class="kt fl">'+Math.round(warm/DATA.length*100)+'% базы</div></div>'
+    +'<div class="kcard kg"><div class="kcard-ic">💰</div><div class="kl">Выручка</div><div class="kv">'+(rev/1e6).toFixed(1)+'M</div><div class="kt '+(rtr>=0?'up':'dn')+'">'+(rtr>=0?'▲':'▼')+' '+Math.abs(rtr).toFixed(1)+'% vs пред.</div></div>'
+    +'</div>'
+    +'<div class="cg2" style="margin-bottom:12px">'
+    +'<div class="cc"><div class="cc-ti">Динамика продаж <span>тыс. руб.</span></div><div class="ch-wrap" style="height:180px"><canvas id="ch-trend"></canvas></div></div>'
+    +'<div class="cc"><div class="cc-ti">Топ-10 клиентов <span>тыс. руб.</span></div><div class="ch-wrap" style="height:180px"><canvas id="ch-top10"></canvas></div></div>'
+    +'</div>'
+    +'<div class="cc"><div class="cc-ti">Выручка по менеджерам <span>тыс.руб. · <span style="color:var(--acc)">клик → открыть клиентов</span></span></div><div class="ch-wrap" style="height:130px"><canvas id="ch-mgrs"></canvas></div></div>'
+    +'</div>';
+  document.querySelectorAll('.pf-btn[data-pf]').forEach(btn=>btn.addEventListener('click',()=>{OV_PERIOD=btn.dataset.pf;renderPage();}));
+  const cf={plugins:{...CHART_DEF.plugins},scales:{...CHART_DEF.scales}};
+  CHARTS.trend=new Chart(document.getElementById('ch-trend'),{type:'line',data:{labels:ML2,datasets:[{label:'Выручка',data:mdata,borderColor:'#4f8ef7',backgroundColor:'rgba(79,142,247,.12)',fill:true,tension:.4,borderWidth:2.5,pointRadius:0}]},options:{...cf,maintainAspectRatio:false}});
+  CHARTS.top10=new Chart(document.getElementById('ch-top10'),{type:'bar',data:{labels:top10.map(r=>r.name.split(' ').slice(0,2).join(' ')),datasets:[{label:'Выручка',data:top10.map(r=>Math.round(r.total/1000)),backgroundColor:'rgba(34,211,238,.7)',borderRadius:5,borderSkipped:false}]},options:{...cf,indexAxis:'y',maintainAspectRatio:false,plugins:{...cf.plugins,legend:{display:false}}}});
+  CHARTS.mgrs=new Chart(document.getElementById('ch-mgrs'),{type:'bar',data:{labels:mgrArr.map(x=>x[0].split(' ').slice(0,2).join(' ')),datasets:[{label:'Выручка, тыс.',data:mgrArr.map(x=>Math.round(x[1]/1000)),backgroundColor:PC.slice(0,10),borderRadius:5,borderSkipped:false}]},options:{...cf,maintainAspectRatio:false,plugins:{...cf.plugins,legend:{display:false}}}});
+  // CROSS-FILTER: клик по менеджеру → страница клиентов с фильтром
+  document.getElementById('ch-mgrs').addEventListener('click',function(evt){
+    const pts=CHARTS.mgrs.getElementsAtEventForMode(evt,'nearest',{intersect:true},false);
+    if(!pts.length)return;
+    CLI_MGR=mgrArr[pts[0].index][0];
+    PAGE='clients';buildSidebar();renderPage();
+    toast('🔍 Фильтр: '+CLI_MGR.split(' ').slice(0,2).join(' '),'ok');
+  });
+  loadAIInsights(document.getElementById('ai-insights-body'));
+}
+
+// ─── SCORING ──────────────────────────────────────────────────────────────
+let SC_MGR='',SC_PROB='0',SC_TOP='50',SC_SRCH='',SC_KEY='prob',SC_ASC=false;
+function renderScoring(m){
+  const mgrs=[...new Set(DATA.map(r=>r.mgr))].sort();
+  m.innerHTML=`<div class="pg">
+    <div class="pg-hd"><div class="pg-ti">ML Скоринг</div><div class="pg-su" id="sc-sub">RFM + тренд-модель</div></div>
+    <div class="tw">
+      <div class="tf">
+        <select id="sc-mgr"><option value="">Все менеджеры</option>${mgrs.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('')}</select>
+        <select id="sc-prob"><option value="0">Любая вероятность</option><option value="0.7">70%+ горячие</option><option value="0.4">40%+ тёплые</option></select>
+        <select id="sc-top"><option value="20">Топ 20</option><option value="50" selected>Топ 50</option><option value="100">Топ 100</option><option value="0">Все</option></select>
+        <input id="sc-srch" placeholder="🔍 Поиск по клиенту..." value="${esc(SC_SRCH)}">
+        <button id="sc-export" style="margin-left:auto;background:var(--s2);border:1px solid var(--bord2);border-radius:7px;padding:6px 14px;font-size:12px;color:var(--gr);font-family:var(--fb);cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--gr)'" onmouseout="this.style.borderColor='var(--bord2)'">📥 Экспорт XLSX</button>
+      </div>
+      <div id="sc-table-wrap" style="overflow-x:auto"></div>
+    </div>
+  </div>`;
+  document.getElementById('sc-mgr').value=SC_MGR;
+  document.getElementById('sc-prob').value=SC_PROB;
+  document.getElementById('sc-top').value=SC_TOP;
+  ['sc-mgr','sc-prob','sc-top'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{
+    SC_MGR=document.getElementById('sc-mgr').value;SC_PROB=document.getElementById('sc-prob').value;SC_TOP=document.getElementById('sc-top').value;drawScoringTable();}));
+  document.getElementById('sc-srch').addEventListener('input',e=>{SC_SRCH=e.target.value;drawScoringTable();});
+  document.getElementById('sc-export').addEventListener('click',()=>{
+    let rows=DATA.filter(r=>(!SC_MGR||r.mgr===SC_MGR)&&r.prob>=parseFloat(SC_PROB)&&(!SC_SRCH||r.name.toLowerCase().includes(SC_SRCH.toLowerCase())));
+    const top=parseInt(SC_TOP)||0;exportScoringXLSX(top>0?rows.slice(0,top):rows);});
+  drawScoringTable();
+}
+function drawScoringTable(){
+  let rows=DATA.filter(r=>(!SC_MGR||r.mgr===SC_MGR)&&r.prob>=parseFloat(SC_PROB)&&(!SC_SRCH||r.name.toLowerCase().includes(SC_SRCH.toLowerCase())));
+  rows.sort((a,b)=>{let va=a[SC_KEY],vb=b[SC_KEY];if(typeof va==='string'){va=va.toLowerCase();vb=vb.toLowerCase();}return SC_ASC?(va>vb?1:-1):(va<vb?1:-1);});
+  const top=parseInt(SC_TOP)||0;const shown=top>0?rows.slice(0,top):rows;
+  document.getElementById('sc-sub').textContent=`${shown.length} клиентов · RFM + тренд-модель`;
+  const cols=[
+    {k:'name',lb:'Клиент'},{k:'mgr',lb:'Менеджер'},{k:'prob',lb:'Вероятность'},
+    {k:'total',lb:'Выручка'},{k:'rec',lb:'Посл. покупка'},{k:'tr',lb:'Тренд'},
+    {k:'tg',lb:'Топ группа'},{k:'nd',lb:'Следующая'}];
+  const srtTh=k=>{if(SC_KEY===k)SC_ASC=!SC_ASC;else{SC_KEY=k;SC_ASC=false;}drawScoringTable();};
+  const tw=document.getElementById('sc-table-wrap');
+  if(!shown.length){tw.innerHTML='<div class="no-data">Нет клиентов по выбранным фильтрам</div>';return;}
+  tw.innerHTML=`<table><thead><tr>
+    <th style="width:36px">#</th>
+    ${cols.map(c=>`<th id="th-${c.k}" class="${SC_KEY===c.k?(SC_ASC?'sort-asc':'sort-desc'):''}">${c.lb}</th>`).join('')}
+  </tr></thead><tbody>${shown.map((r,i)=>`<tr style="cursor:pointer" data-idx="${i}">
+    <td class="td-mono" style="color:var(--mt)">${i+1}</td>
+    <td class="td-name" title="${esc(r.name)}">${esc(r.name)}</td>
+    <td class="td-mgr">${esc(r.mgr)}</td>
+    <td>${pbHtml(r.prob)}</td>
+    <td class="td-mono">${fmt(r.total)}</td>
+    <td class="td-mono">${r.rec>=0?ML[r.rec]:'—'}</td>
+    <td>${trendHtml(r.tr)}</td>
+    <td class="td-grp" title="${esc(r.tg)}">${esc(r.tg)}</td>
+    <td class="td-mono">${nextTxt(r.nd)}</td>
+  </tr>`).join('')}</tbody></table>`;
+  cols.forEach(c=>document.getElementById('th-'+c.k).addEventListener('click',()=>srtTh(c.k)));
+  tw.querySelectorAll('tbody tr').forEach((tr,i)=>tr.addEventListener('click',()=>showClientModal(shown[i])));
+}
+
+// ─── MANAGERS ─────────────────────────────────────────────────────────────
+function renderManagers(m){
+  const stats=buildMgrStats();
+  m.innerHTML=`<div class="pg">
+    <div class="pg-hd"><div class="pg-ti">Менеджеры</div><div class="pg-su">${stats.length} менеджеров</div></div>
+    <div class="cg22" style="margin-bottom:12px">
+      <div class="cc"><div class="cc-ti">Средний чек <span>тыс. руб.</span></div><div class="ch-wrap" style="height:220px"><canvas id="ch-mavg"></canvas></div></div>
+      <div class="cc"><div class="cc-ti">% горячих клиентов</div><div class="ch-wrap" style="height:220px"><canvas id="ch-mhot"></canvas></div></div>
+    </div>
+    <div class="cgrid">${stats.map(s=>`<div class="mgrc">
+      <div class="mgrc-nm">${esc(s.name)}</div>
+      <div class="ms"><span class="ms-l">Клиентов</span><span class="ms-v">${s.cnt}</span></div>
+      <div class="ms"><span class="ms-l">Выручка</span><span class="ms-v">${fmt(s.rev)}</span></div>
+      <div class="ms"><span class="ms-l">Средний чек</span><span class="ms-v">${fmt(s.avg)}</span></div>
+      <div class="ms"><span class="ms-l">Горячих</span><span class="ms-v" style="color:var(--hot)">${s.hot} (${Math.round(s.hr*100)}%)</span></div>
+      <div class="ms"><span class="ms-l">Ср. вероятность</span><span class="ms-v">${Math.round(s.ap*100)}%</span></div>
+      <div class="mgrc-bar"><div class="mgrc-bar-fill" style="width:${Math.round(s.hr*100)}%"></div></div>
+    </div>`).join('')}</div>
+  </div>`;
+  const cf={...CHART_DEF.plugins,legend:{display:false}};
+  const top8=stats.slice(0,8);
+  CHARTS.mavg=new Chart(document.getElementById('ch-mavg'),{type:'bar',data:{labels:top8.map(s=>s.name.split(' ').slice(0,2).join(' ')),datasets:[{data:top8.map(s=>Math.round(s.avg/1000)),backgroundColor:PC.slice(0,8),borderRadius:3}]},options:{maintainAspectRatio:false,plugins:{...CHART_DEF.plugins,legend:{display:false}},scales:{x:{ticks:{color:'#4b6282',font:{size:8}},grid:{color:'#1b2a3d'},border:{display:false}},y:{ticks:{color:'#4b6282',font:{size:9}},grid:{color:'#1b2a3d'},border:{display:false}}}}});
+  CHARTS.mhot=new Chart(document.getElementById('ch-mhot'),{type:'bar',data:{labels:top8.map(s=>s.name.split(' ').slice(0,2).join(' ')),datasets:[{data:top8.map(s=>Math.round(s.hr*100)),backgroundColor:'#f43f5e',borderRadius:3}]},options:{maintainAspectRatio:false,plugins:{...CHART_DEF.plugins,legend:{display:false}},scales:{x:{ticks:{color:'#4b6282',font:{size:8}},grid:{color:'#1b2a3d'},border:{display:false}},y:{ticks:{color:'#4b6282',font:{size:9}},grid:{color:'#1b2a3d'},border:{display:false},max:100}}}});
+}
+function buildMgrStats(){
+  const map={};
+  DATA.forEach(r=>{if(!map[r.mgr])map[r.mgr]={name:r.mgr,cli:[],rev:0,hot:0};
+    map[r.mgr].cli.push(r);map[r.mgr].rev+=r.total;if(r.prob>=.7)map[r.mgr].hot++;});
+  return Object.values(map).map(x=>({...x,cnt:x.cli.length,avg:x.rev/x.cli.length,hr:x.hot/x.cli.length,ap:x.cli.reduce((s,r)=>s+r.prob,0)/x.cli.length})).sort((a,b)=>b.rev-a.rev);
+}
+
+// ─── CLIENTS ──────────────────────────────────────────────────────────────
+let CLI_SRCH='',CLI_MGR='',CLI_TIER='',CLI_SORT='prob';
+function renderClients(m){
+  const mgrs=[...new Set(DATA.map(r=>r.mgr))].sort();
+  m.innerHTML=`<div class="pg">
+    <div class="pg-hd"><div class="pg-ti">Клиенты</div><div class="pg-su" id="cli-sub"></div></div>
+    <div class="flt">
+      <input id="cli-srch" placeholder="🔍 Поиск по названию..." value="${esc(CLI_SRCH)}">
+      <select id="cli-mgr"><option value="">Все менеджеры</option>${mgrs.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('')}</select>
+      <select id="cli-tier">
+        <option value="">Все сегменты</option>
+        <option value="hot">🔥 Горячие 70%+</option>
+        <option value="warm">⚡ Тёплые 40–70%</option>
+        <option value="cold">❄️ Холодные &lt;40%</option>
+      </select>
+    </div>
+    <div class="sort-bar">
+      <span class="sort-lbl">Сортировка:</span>
+      <button class="sort-btn ${CLI_SORT==='prob'?'on':''}" data-sort="prob">По вероятности</button>
+      <button class="sort-btn ${CLI_SORT==='total'?'on':''}" data-sort="total">По выручке</button>
+      <button class="sort-btn ${CLI_SORT==='nd'?'on':''}" data-sort="nd">По дате</button>
+      <button class="sort-btn ${CLI_SORT==='name'?'on':''}" data-sort="name">По имени</button>
+    </div>
+    <div id="cli-cards"></div>
+  </div>`;
+  document.getElementById('cli-mgr').value=CLI_MGR;
+  document.getElementById('cli-tier').value=CLI_TIER;
+  document.getElementById('cli-srch').addEventListener('input',e=>{CLI_SRCH=e.target.value;drawClients();});
+  document.getElementById('cli-mgr').addEventListener('change',e=>{CLI_MGR=e.target.value;drawClients();});
+  document.getElementById('cli-tier').addEventListener('change',e=>{CLI_TIER=e.target.value;drawClients();});
+  document.querySelectorAll('.sort-btn[data-sort]').forEach(btn=>btn.addEventListener('click',()=>{
+    CLI_SORT=btn.dataset.sort;
+    document.querySelectorAll('.sort-btn[data-sort]').forEach(b=>b.classList.toggle('on',b.dataset.sort===CLI_SORT));
+    drawClients();}));
+  drawClients();
+}
+function drawClients(){
+  let rows=DATA.filter(r=>{
+    if(CLI_SRCH&&!r.name.toLowerCase().includes(CLI_SRCH.toLowerCase()))return false;
+    if(CLI_MGR&&r.mgr!==CLI_MGR)return false;
+    if(CLI_TIER==='hot'&&r.prob<.7)return false;
+    if(CLI_TIER==='warm'&&(r.prob<.4||r.prob>=.7))return false;
+    if(CLI_TIER==='cold'&&r.prob>=.4)return false;
+    return true;});
+  if(CLI_SORT==='name')rows=[...rows].sort((a,b)=>a.name.localeCompare(b.name,'ru'));
+  else if(CLI_SORT==='total')rows=[...rows].sort((a,b)=>b.total-a.total);
+  else if(CLI_SORT==='nd')rows=[...rows].sort((a,b)=>a.nd-b.nd);
+  // else prob (default, already sorted)
+  document.getElementById('cli-sub').textContent=`${rows.length} из ${DATA.length} клиентов`;
+  const shown=rows.slice(0,120);
+  const el=document.getElementById('cli-cards');
+  if(!rows.length){el.innerHTML='<div class="no-data">Нет клиентов по фильтрам</div>';return;}
+  el.innerHTML=`<div class="cgrid">${shown.map((r,i)=>{
+    const p=pct(r.prob),col=p>=70?'var(--hot)':p>=40?'var(--warm)':'var(--mt)';
+    return`<div class="clic" style="cursor:pointer" data-cli="${i}">
+      <div class="clic-nm" title="${esc(r.name)}">${esc(r.name)}</div>
+      <div class="clic-mgr">${esc(r.mgr)}</div>
+      <div class="clic-bar"><div style="height:5px;width:${p}%;background:${col};border-radius:3px"></div></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="font-family:var(--fm);font-size:13px;color:${col};font-weight:600">${p}%</span>
+        ${trendHtml(r.tr)}
+      </div>
+      <div class="clic-stats">
+        <div><div class="clic-stat-l">Выручка</div><div class="clic-stat-v">${fmt(r.total)}</div></div>
+        <div><div class="clic-stat-l">Следующая</div><div class="clic-stat-v" style="font-size:10px">${nextTxt(r.nd)}</div></div>
+        <div><div class="clic-stat-l">Посл. пок.</div><div class="clic-stat-v" style="font-size:10px">${r.rec>=0?ML[r.rec]:'—'}</div></div>
+      </div>
+      ${r.tg&&r.tg!=='Нет данных'?`<div style="margin-top:8px;font-size:10px;color:var(--mt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.tg)}">${esc(r.tg)}</div>`:''}
+    </div>`;}).join('')}
+    ${rows.length>120?`<div style="text-align:center;padding:20px;color:var(--mt);font-size:12px;grid-column:1/-1">Показано 120 из ${rows.length}</div>`:''}
+  </div>`;
+  el.querySelectorAll('.clic[data-cli]').forEach((card,i)=>card.addEventListener('click',()=>showClientModal(shown[i])));
+}
+
+// ─── PRODUCTS ─────────────────────────────────────────────────────────────
+let PROD_MGR='';
+function renderProducts(m){
+  const mgrs=[...new Set(DATA.map(r=>r.mgr))].sort();
+  m.innerHTML=`<div class="pg">
+    <div class="pg-hd"><div class="pg-ti">Товарные группы</div><div class="pg-su">Распределение выручки</div></div>
+    <div class="flt">
+      <select id="pr-mgr"><option value="">Все менеджеры</option>${mgrs.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('')}</select>
+    </div>
+    <div class="cg22">
+      <div class="cc"><div class="cc-ti">Доля выручки</div><div class="ch-wrap" style="height:300px"><canvas id="ch-pie"></canvas></div></div>
+      <div class="cc"><div class="cc-ti">Топ-15 групп</div><div id="pr-list" style="overflow-y:auto;max-height:300px"></div></div>
+    </div>
+  </div>`;
+  document.getElementById('pr-mgr').value=PROD_MGR;
+  document.getElementById('pr-mgr').addEventListener('change',e=>{PROD_MGR=e.target.value;drawProducts();});
+  drawProducts();
+}
+function drawProducts(){
+  const mgr=document.getElementById('pr-mgr').value;
+  const map={};
+  (mgr?DATA.filter(r=>r.mgr===mgr):DATA).forEach(r=>{Object.entries(r.prod).forEach(([g,v])=>{map[g]=(map[g]||0)+v;});});
+  const prods=Object.entries(map).map(([name,value])=>({name,value:Math.round(value)})).sort((a,b)=>b.value-a.value).slice(0,15);
+  const tot=prods.reduce((s,d)=>s+d.value,0);
+  destroyChart('pie');
+  if(!prods.length){
+    document.getElementById('pr-list').innerHTML='<div class="no-data" style="padding:20px">Нет данных о товарных группах</div>';
+    return;}
+  CHARTS.pie=new Chart(document.getElementById('ch-pie'),{type:'doughnut',data:{labels:prods.map(d=>d.name),datasets:[{data:prods.map(d=>d.value),backgroundColor:PC.slice(0,prods.length),borderWidth:1,borderColor:'#111d2e'}]},options:{maintainAspectRatio:false,plugins:{...CHART_DEF.plugins,legend:{labels:{color:'#7a90aa',font:{size:10},boxWidth:12}}}}});
+  document.getElementById('pr-list').innerHTML=prods.map((d,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bord)">
+    <div style="width:9px;height:9px;border-radius:2px;background:${PC[i%PC.length]};flex-shrink:0"></div>
+    <div style="flex:1;font-size:11px;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(d.name)}">${esc(d.name)}</div>
+    <div style="font-family:var(--fm);font-size:11px;color:var(--tx2)">${fmt(d.value)}</div>
+    <div style="font-size:10px;color:var(--mt);width:34px;text-align:right">${Math.round(d.value/tot*100)}%</div>
+  </div>`).join('');
+}
+
+// ─── FORECAST ─────────────────────────────────────────────────────────────
+function renderForecast(m){
+  const top30=DATA.slice(0,30);
+  const mx=Math.max(...top30.flatMap(r=>r.mo),1);
+  const hot9=DATA.filter(r=>r.prob>=.7&&r.nd<=15).slice(0,9);
+  const warm9=DATA.filter(r=>r.prob>=.4&&r.prob<.7&&r.nd<=30).slice(0,9);
+  const risk9=DATA.filter(r=>{const l=r.mo.slice(-3).reduce((a,b)=>a+b,0),p=r.mo.slice(-6,-3).reduce((a,b)=>a+b,0);return p>0&&l<p*.5&&r.prob>=.25;}).slice(0,9);
+  const hcol=v=>{if(!v)return'#0c1422';const rt=v/mx;if(rt>.7)return'#1d4ed8';if(rt>.4)return'#1e40af';if(rt>.15)return'#1e3a8a';return'#172554';};
+  const shortML=ML.map(l=>l.replace('25','').replace('26',''));
+  m.innerHTML=`<div class="pg">
+    <div class="pg-hd"><div class="pg-ti">Прогноз</div><div class="pg-su">Активность клиентов и рекомендации</div></div>
+    <div class="cc" style="margin-bottom:16px">
+      <div class="cc-ti">Тепловая карта активности <span>топ-30 клиентов × 15 месяцев</span></div>
+      <div class="heatmap-wrap">
+        <table class="hm-table">
+          <thead><tr>
+            <th class="hm-rn" style="border:none;background:transparent;font-size:10px;color:var(--mt);font-weight:400;padding-right:10px">Клиент</th>
+            ${shortML.map(l=>`<th class="hm-th">${l}</th>`).join('')}
+          </tr></thead>
+          <tbody>${top30.map(r=>`<tr>
+            <td class="hm-rn" title="${esc(r.name)}">${esc(r.name.split(' ').slice(0,4).join(' '))}</td>
+            ${r.mo.map((v,i)=>`<td><div class="hm-cell" title="${ML[i]}: ${fmt(v)}" style="background:${hcol(v)}"></div></td>`).join('')}
+          </tr>`).join('')}</tbody>
+        </table>
+        <div class="hm-legend">
+          <span>Нет покупок</span>
+          <span class="hm-lc" style="background:#172554"></span>
+          <span class="hm-lc" style="background:#1e3a8a"></span>
+          <span class="hm-lc" style="background:#1e40af"></span>
+          <span class="hm-lc" style="background:#1d4ed8"></span>
+          <span>Высокая активность</span>
+        </div>
+      </div>
+    </div>
+    <div class="rec-grid">
+      <div class="recc">
+        <div class="recc-ti" style="color:var(--hot)">🔥 Горячие — звонить сейчас <span style="margin-left:auto;color:var(--mt)">${hot9.length}</span></div>
+        ${!hot9.length?'<div style="font-size:12px;color:var(--mt)">Нет клиентов</div>':hot9.map(r=>`<div class="reci"><div class="reci-n" title="${esc(r.name)}">${esc(r.name.split(' ').slice(0,4).join(' '))}</div><div class="reci-s">${esc(r.mgr)} · ${pct(r.prob)}% · ${fmt(r.total)}</div></div>`).join('')}
+      </div>
+      <div class="recc">
+        <div class="recc-ti" style="color:var(--warm)">⚡ Тёплые — подготовить КП <span style="margin-left:auto;color:var(--mt)">${warm9.length}</span></div>
+        ${!warm9.length?'<div style="font-size:12px;color:var(--mt)">Нет клиентов</div>':warm9.map(r=>`<div class="reci"><div class="reci-n" title="${esc(r.name)}">${esc(r.name.split(' ').slice(0,4).join(' '))}</div><div class="reci-s">${esc(r.mgr)} · ${pct(r.prob)}% · ≈${r.nd} дн.</div></div>`).join('')}
+      </div>
+      <div class="recc">
+        <div class="recc-ti" style="color:var(--cy)">📉 Под угрозой — реактивация <span style="margin-left:auto;color:var(--mt)">${risk9.length}</span></div>
+        ${!risk9.length?'<div style="font-size:12px;color:var(--mt)">Нет клиентов</div>':risk9.map(r=>`<div class="reci"><div class="reci-n" title="${esc(r.name)}">${esc(r.name.split(' ').slice(0,4).join(' '))}</div><div class="reci-s">${esc(r.mgr)} · тренд: ${trendHtml(r.tr)} · ${fmt(r.total)}</div></div>`).join('')}
+      </div>
+    </div>
+  </div>`;}
+
+// ─── COMPARE ──────────────────────────────────────────────────────────────
+let CMP_TAB='managers',CMP_M1='',CMP_M2='';
+function renderCompare(m){
+  const mgrs=[...new Set(DATA.map(r=>r.mgr))].sort();
+  if(!CMP_M1&&mgrs.length>0)CMP_M1=mgrs[0];
+  if(!CMP_M2&&mgrs.length>1)CMP_M2=mgrs[1];
+  m.innerHTML=`<div class="pg">
+    <div class="pg-hd"><div class="pg-ti">Сравнение</div><div class="pg-su">Менеджеры, кварталы, сезонность</div></div>
+    <div class="tabs">
+      <button class="tab ${CMP_TAB==='managers'?'on':''}" data-tab="managers">👥 Менеджеры</button>
+      <button class="tab ${CMP_TAB==='periods'?'on':''}" data-tab="periods">📅 Кварталы</button>
+      <button class="tab ${CMP_TAB==='seasonal'?'on':''}" data-tab="seasonal">🌊 Сезонность</button>
+    </div>
+    <div id="cmp-content"></div>
+  </div>`;
+  document.querySelectorAll('.tab[data-tab]').forEach(btn=>btn.addEventListener('click',()=>{CMP_TAB=btn.dataset.tab;drawCompare();}));
+  drawCompare();
+}
+function drawCompare(){
+  document.querySelectorAll('.tab[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===CMP_TAB));
+  const mgrs=[...new Set(DATA.map(r=>r.mgr))].sort();
+  const el=document.getElementById('cmp-content');
+  destroyChart('cmp1');destroyChart('cmp2');
+
+  if(CMP_TAB==='managers'){
+    el.innerHTML=`<div class="cmp-row">
+      <select class="sel-a" id="cm1">${mgrs.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join('')}</select>
+      <span class="vs-lbl">vs</span>
+      <select class="sel-b" id="cm2">${mgrs.map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join('')}</select>
+    </div>
+    <div class="cg22">
+      <div class="cc"><div class="cc-ti">Продажи по месяцам <span>тыс. руб.</span></div><div class="ch-wrap" style="height:200px"><canvas id="ch-cmp1"></canvas></div></div>
+      <div class="cc" id="cmp-stats-wrap"><div class="cc-ti">Ключевые показатели</div><div id="cmp-table-wrap"></div></div>
+    </div>`;
+    document.getElementById('cm1').value=CMP_M1;
+    document.getElementById('cm2').value=CMP_M2;
+    document.getElementById('cm1').addEventListener('change',e=>{CMP_M1=e.target.value;drawCmpChart();});
+    document.getElementById('cm2').addEventListener('change',e=>{CMP_M2=e.target.value;drawCmpChart();});
+    drawCmpChart();
+  } else if(CMP_TAB==='periods'){
+    const QM=[[0,1,2],[3,4,5],[6,7,8],[9,10,11],[12,13,14]];
+    const QL=['Q1 2025','Q2 2025','Q3 2025','Q4 2025','Q1 2026'];
+    const qd=QL.map((q,qi)=>({q,rev:Math.round(DATA.reduce((s,r)=>s+QM[qi].reduce((ss,mi)=>ss+(r.mo[mi]||0),0),0)/1000),cli:DATA.filter(r=>QM[qi].some(mi=>(r.mo[mi]||0)>0)).length}));
+    el.innerHTML=`<div class="cc" style="margin-bottom:14px"><div class="cc-ti">Выручка по кварталам <span>тыс. руб.</span></div><div class="ch-wrap" style="height:200px"><canvas id="ch-cmp1"></canvas></div></div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">
+      ${qd.map((q,i)=>{const prev=i>0?qd[i-1].rev:null;const gr=prev?((q.rev-prev)/prev*100):null;
+        return`<div class="qcard"><div class="qcard-l">${q.q}</div><div class="qcard-v">${q.rev}к</div><div class="qcard-sub">${q.cli} кл.</div>${gr!==null?`<div class="qcard-tr" style="color:${gr>=0?'var(--gr)':'var(--hot)'}">${gr>=0?'▲':'▼'} ${Math.abs(gr).toFixed(1)}%</div>`:''}</div>`;}).join('')}
+    </div>`;
+    CHARTS.cmp1=new Chart(document.getElementById('ch-cmp1'),{type:'bar',data:{labels:QL,datasets:[{label:'Выручка, тыс.',data:qd.map(q=>q.rev),backgroundColor:'#3b82f6',borderRadius:4},{label:'Клиентов',data:qd.map(q=>q.cli),backgroundColor:'#22d3ee',borderRadius:4}]},options:{maintainAspectRatio:false,plugins:{...CHART_DEF.plugins},scales:{x:{ticks:{color:'#4b6282'},grid:{color:'#1b2a3d'},border:{display:false}},y:{ticks:{color:'#4b6282'},grid:{color:'#1b2a3d'},border:{display:false}}}}});
+  } else {
+    const mdata=ML.slice(0,12).map((l,i)=>({m:l.replace('.25',''),r:Math.round(DATA.reduce((s,r)=>(r.mo[i]||0)+s,0)/1000)}));
+    const avg=mdata.reduce((s,d)=>s+d.r,0)/12;
+    const si=mdata.map(d=>({m:d.m,idx:avg>0?Math.round(d.r/avg*100):100}));
+    el.innerHTML=`<div class="cc" style="margin-bottom:14px"><div class="cc-ti">Динамика 2025 <span>тыс. руб.</span></div><div class="ch-wrap" style="height:200px"><canvas id="ch-cmp1"></canvas></div></div>
+    <div class="cc"><div class="cc-ti">Сезонный индекс <span>100 = среднемесячный</span></div><div class="ch-wrap" style="height:160px"><canvas id="ch-cmp2"></canvas></div></div>`;
+    CHARTS.cmp1=new Chart(document.getElementById('ch-cmp1'),{type:'line',data:{labels:mdata.map(d=>d.m),datasets:[{label:'Выручка',data:mdata.map(d=>d.r),borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.12)',fill:true,tension:.4,borderWidth:2,pointRadius:0}]},options:{maintainAspectRatio:false,plugins:{...CHART_DEF.plugins,legend:{display:false}},scales:{x:{ticks:{color:'#4b6282'},grid:{color:'#1b2a3d'},border:{display:false}},y:{ticks:{color:'#4b6282'},grid:{color:'#1b2a3d'},border:{display:false}}}}});
+    CHARTS.cmp2=new Chart(document.getElementById('ch-cmp2'),{type:'bar',data:{labels:si.map(d=>d.m),datasets:[{label:'Сез. индекс',data:si.map(d=>d.idx),backgroundColor:si.map(d=>d.idx>=100?'#8b5cf6':'#4b6282'),borderRadius:3}]},options:{maintainAspectRatio:false,plugins:{...CHART_DEF.plugins,legend:{display:false}},scales:{x:{ticks:{color:'#4b6282'},grid:{color:'#1b2a3d'},border:{display:false}},y:{ticks:{color:'#4b6282'},grid:{color:'#1b2a3d'},border:{display:false}}}}});
+  }
+}
+function drawCmpChart(){
+  destroyChart('cmp1');
+  const A=DATA.filter(r=>r.mgr===CMP_M1);const B=DATA.filter(r=>r.mgr===CMP_M2);
+  const revA=x=>A.reduce((s,r)=>s+r.total,0),revB=x=>B.reduce((s,r)=>s+r.total,0);
+  const hotA=A.filter(r=>r.prob>=.7).length,hotB=B.filter(r=>r.prob>=.7).length;
+  const avgA=A.length?revA()/A.length:0,avgB=B.length?revB()/B.length:0;
+  CHARTS.cmp1=new Chart(document.getElementById('ch-cmp1'),{type:'line',data:{labels:ML,datasets:[
+    {label:CMP_M1,data:ML.map((_,i)=>Math.round(A.reduce((s,r)=>(r.mo[i]||0)+s,0)/1000)),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.1)',fill:true,tension:.4,borderWidth:2,pointRadius:0},
+    {label:CMP_M2,data:ML.map((_,i)=>Math.round(B.reduce((s,r)=>(r.mo[i]||0)+s,0)/1000)),borderColor:'#22d3ee',backgroundColor:'rgba(34,211,238,.08)',fill:true,tension:.4,borderWidth:2,pointRadius:0}
+  ]},options:{maintainAspectRatio:false,plugins:{...CHART_DEF.plugins},scales:{x:{ticks:{color:'#4b6282',font:{size:9}},grid:{color:'#1b2a3d'},border:{display:false}},y:{ticks:{color:'#4b6282',font:{size:9}},grid:{color:'#1b2a3d'},border:{display:false}}}}});
+  const cmp=(a,b)=>{const w=a>b,t=a===b;return{a:`<td class="${w?'win':t?'neu':'los'}">${fmt(typeof a==='string'?a:a)}</td>`,b:`<td class="${!w&&!t?'win':t?'neu':'los'}">${fmt(typeof b==='string'?b:b)}</td>`};};
+  const n1=CMP_M1.split(' ')[0],n2=CMP_M2.split(' ')[0];
+  document.getElementById('cmp-table-wrap').innerHTML=`<table class="cmp-table">
+    <thead><tr><td></td><td style="font-weight:600;color:var(--acc);font-family:var(--fm);font-size:11px">${esc(n1)}</td><td style="font-weight:600;color:var(--cy);font-family:var(--fm);font-size:11px">${esc(n2)}</td></tr></thead>
+    <tbody>
+      <tr><td>Клиентов</td>${cmp(A.length,B.length).a}${cmp(A.length,B.length).b}</tr>
+      <tr><td>Выручка</td>${cmp(revA(),revB()).a}${cmp(revA(),revB()).b}</tr>
+      <tr><td>Горячих</td>${cmp(hotA,hotB).a}${cmp(hotA,hotB).b}</tr>
+      <tr><td>% горячих</td>${cmp(A.length?Math.round(hotA/A.length*100):0,B.length?Math.round(hotB/B.length*100):0).a}${cmp(A.length?Math.round(hotA/A.length*100):0,B.length?Math.round(hotB/B.length*100):0).b}</tr>
+      <tr><td>Средний чек</td>${cmp(avgA,avgB).a}${cmp(avgA,avgB).b}</tr>
+    </tbody>
+  </table>`;}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ─── RFM ANALYSIS ──────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+const RFM_SEG_META={
+  'Champions'    :{ic:'🏆',col:'#10b981',desc:'Купили недавно, часто, много'},
+  'Loyal'        :{ic:'💙',col:'#4f8ef7',desc:'Покупают регулярно'},
+  'Pot. Loyalist':{ic:'⭐',col:'#22d3ee',desc:'Новые с хорошим потенциалом'},
+  'New Customer' :{ic:'🌱',col:'#a3e635',desc:'Недавняя первая покупка'},
+  'At Risk'      :{ic:'⚠️',col:'#f43f5e',desc:'Ранее активные, пропали'},
+  'Cant Lose'    :{ic:'🆘',col:'#fb7185',desc:'Ценные, но давно нет'},
+  'Hibernating'  :{ic:'😴',col:'#56709a',desc:'Мало и нерегулярно'},
+  'Promising'    :{ic:'🚀',col:'#fb923c',desc:'Недавние, но ещё редко'},
+  'Need Attn'    :{ic:'👀',col:'#f59e0b',desc:'Средние по всем осям'},
+  'Lost'         :{ic:'💀',col:'#374151',desc:'Минимальная активность'},
+};
+function getRFMRows(){
+  const n=DATA.length; if(!n)return[];
+  // R score: rank by recency (14-rec; smaller=better→higher score)
+  const byR=[...DATA].map((r,i)=>({i,v:14-r.rec})).sort((a,b)=>b.v-a.v);
+  const rMap=new Map(); byR.forEach((x,rank)=>rMap.set(x.i,Math.ceil((rank+1)/n*5)));
+  // F score: months with purchases
+  const byF=[...DATA].map((r,i)=>({i,v:r.mo.filter(x=>x>0).length})).sort((a,b)=>b.v-a.v);
+  const fMap=new Map(); byF.forEach((x,rank)=>fMap.set(x.i,Math.ceil((rank+1)/n*5)));
+  // M score: total revenue
+  const byM=[...DATA].map((r,i)=>({i,v:r.total})).sort((a,b)=>b.v-a.v);
+  const mMap=new Map(); byM.forEach((x,rank)=>mMap.set(x.i,Math.ceil((rank+1)/n*5)));
+  return DATA.map((r,i)=>{
+    const rs=rMap.get(i)||1,fs=fMap.get(i)||1,ms=mMap.get(i)||1;
+    const seg=rfmSegName(rs,fs,ms);
+    return Object.assign({},r,{rs,fs,ms,rfmSeg:seg});
+  });
+}
+function rfmSegName(r,f,m){
+  if(r>=4&&f>=4&&m>=4)return'Champions';
+  if(r>=3&&f>=3&&m>=4)return'Loyal';
+  if(r>=4&&f<=2&&m>=2)return'Pot. Loyalist';
+  if(r>=4&&f<=1)return'New Customer';
+  if(r<=2&&f>=4&&m>=4)return'Cant Lose';
+  if(r<=2&&f>=3&&m>=3)return'At Risk';
+  if(r>=3&&f<=2&&m<=2)return'Promising';
+  if(r<=2&&f<=2&&m<=2)return'Lost';
+  if(r<=2&&f<=2)return'Hibernating';
+  return'Need Attn';
+}
+function renderRFM(m){
+  const rows=getRFMRows();
+  const segMap={};
+  Object.keys(RFM_SEG_META).forEach(s=>segMap[s]={cnt:0,rev:0,rows:[]});
+  rows.forEach(r=>{if(segMap[r.rfmSeg]){segMap[r.rfmSeg].cnt++;segMap[r.rfmSeg].rev+=r.total;segMap[r.rfmSeg].rows.push(r);}});
+  const segs=Object.keys(RFM_SEG_META);
+  const segOrder=segs.slice().sort((a,b)=>(segMap[b]||{rev:0}).rev-(segMap[a]||{rev:0}).rev);
+  function resolveCol(col){return col.startsWith('#')?col:'#4f8ef7';}
+  m.innerHTML='<div class="pg">'
+    +'<div class="pg-hd"><div class="pg-ti">RFM-анализ</div><div class="pg-su">Recency · Frequency · Monetary — '+rows.length+' клиентов</div></div>'
+    +'<div class="rfm-info-grid">'
+    +'<div class="rfm-info-card"><div class="rfm-info-letter" style="color:var(--acc)">R</div><b style="font-size:12px">Recency — давность</b><div class="rfm-info-desc" style="margin-top:4px">Кол-во месяцев с последней покупки. Чем меньше — тем выше балл (1–5).</div></div>'
+    +'<div class="rfm-info-card"><div class="rfm-info-letter" style="color:var(--cy)">F</div><b style="font-size:12px">Frequency — частота</b><div class="rfm-info-desc" style="margin-top:4px">Кол-во месяцев с покупками за 15 мес. Больше = выше балл.</div></div>'
+    +'<div class="rfm-info-card"><div class="rfm-info-letter" style="color:var(--gr)">M</div><b style="font-size:12px">Monetary — деньги</b><div class="rfm-info-desc" style="margin-top:4px">Суммарная выручка за период. Квинтильное ранжирование 1–5.</div></div>'
+    +'</div>'
+    +'<div class="rfm-seg-grid">'
+    +segs.map(s=>{const d=segMap[s];const meta=RFM_SEG_META[s];return '<div class="rfm-seg"><div class="rfm-seg-ic">'+meta.ic+'</div><div class="rfm-seg-name" style="color:'+meta.col+'">'+s+'</div><div class="rfm-seg-cnt">'+d.cnt+'</div><div class="rfm-seg-rev">'+(d.rev?fmt(d.rev):'—')+'</div></div>';}).join('')
+    +'</div>'
+    +'<div class="cg22" style="margin-bottom:14px">'
+    +'<div class="cc"><div class="cc-ti">Клиентов по сегментам</div><div class="ch-wrap" style="height:230px"><canvas id="ch-rfm-bar"></canvas></div></div>'
+    +'<div class="cc"><div class="cc-ti">Доля выручки по сегментам</div><div class="ch-wrap" style="height:230px"><canvas id="ch-rfm-pie"></canvas></div></div>'
+    +'</div>'
+    +'<div class="tw"><div class="tf">'
+    +'<select id="rfm-seg-sel"><option value="">Все сегменты</option>'+segs.map(s=>'<option value="'+s+'">'+RFM_SEG_META[s].ic+' '+s+' ('+segMap[s].cnt+')</option>').join('')+'</select>'
+    +'<input id="rfm-srch" placeholder="🔍 Поиск по клиенту..." style="min-width:180px">'
+    +'</div><div id="rfm-table" style="overflow-x:auto"></div></div>'
+    +'</div>';
+  const cols=segOrder.map(s=>resolveCol(RFM_SEG_META[s].col));
+  const sc={x:{ticks:{color:'#56709a',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'},border:{display:false}},y:{ticks:{color:'#56709a',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'},border:{display:false}}};
+  CHARTS.rfmBar=new Chart(document.getElementById('ch-rfm-bar'),{type:'bar',data:{labels:segOrder,datasets:[{data:segOrder.map(s=>segMap[s].cnt),backgroundColor:cols,borderRadius:4}]},options:{maintainAspectRatio:false,plugins:{...CHART_DEF.plugins,legend:{display:false}},scales:sc}});
+  const pieSegs=segs.filter(s=>segMap[s].rev>0);
+  CHARTS.rfmPie=new Chart(document.getElementById('ch-rfm-pie'),{type:'doughnut',data:{labels:pieSegs,datasets:[{data:pieSegs.map(s=>segMap[s].rev),backgroundColor:pieSegs.map(s=>resolveCol(RFM_SEG_META[s].col)),borderWidth:1,borderColor:'#111d2e'}]},options:{maintainAspectRatio:false,plugins:{...CHART_DEF.plugins,legend:{labels:{color:'#7a90aa',font:{size:10},boxWidth:12}}}}});
+  function drawRFMTable(){
+    const seg=document.getElementById('rfm-seg-sel').value;
+    const srch=document.getElementById('rfm-srch').value.toLowerCase();
+    let list=seg?segMap[seg].rows:rows;
+    if(srch)list=list.filter(r=>r.name.toLowerCase().includes(srch));
+    const tw=document.getElementById('rfm-table');
+    if(!list.length){tw.innerHTML='<div class="no-data">Нет клиентов</div>';return;}
+    tw.innerHTML='<table><thead><tr><th>#</th><th>Клиент</th><th>Менеджер</th><th>Сегмент</th><th>RFM баллы</th><th>Выручка</th><th>Частота</th><th>Давность</th></tr></thead><tbody>'
+      +list.slice(0,100).map(function(r,i){
+        const meta=RFM_SEG_META[r.rfmSeg]||{ic:'?',col:'var(--mt)'};
+        const score='<span class="rfm-sc" style="color:'+(r.rs>=4?'#10b981':r.rs>=3?'#f59e0b':'#56709a')+'">R'+r.rs+'</span>'
+          +'<span class="rfm-sc" style="margin-left:2px;color:'+(r.fs>=4?'#22d3ee':r.fs>=3?'#4f8ef7':'#56709a')+'">F'+r.fs+'</span>'
+          +'<span class="rfm-sc" style="margin-left:2px;color:'+(r.ms>=4?'#10b981':r.ms>=3?'#f59e0b':'#56709a')+'">M'+r.ms+'</span>';
+        const freq=r.mo.filter(function(v){return v>0;}).length;
+        return '<tr style="cursor:pointer" data-rfmi="'+i+'">'
+          +'<td class="td-mono" style="color:var(--mt)">'+(i+1)+'</td>'
+          +'<td class="td-name" title="'+esc(r.name)+'">'+esc(r.name)+'</td>'
+          +'<td class="td-mgr">'+esc(r.mgr)+'</td>'
+          +'<td><span style="color:'+meta.col+'">'+meta.ic+' '+r.rfmSeg+'</span></td>'
+          +'<td>'+score+'</td>'
+          +'<td class="td-mono">'+fmt(r.total)+'</td>'
+          +'<td class="td-mono">'+freq+' мес.</td>'
+          +'<td class="td-mono">'+(r.rec>=0?ML[r.rec]:'—')+'</td>'
+          +'</tr>';
+      }).join('')+'</tbody></table>';
+    tw.querySelectorAll('tbody tr').forEach(function(tr,i){tr.addEventListener('click',function(){showClientModal(list[i]);});});
+  }
+  document.getElementById('rfm-seg-sel').addEventListener('change',drawRFMTable);
+  document.getElementById('rfm-srch').addEventListener('input',drawRFMTable);
+  drawRFMTable();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ─── ABC / XYZ ANALYSIS ───────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+function getABCXYZRows(){
+  const sorted=[...DATA].sort(function(a,b){return b.total-a.total;});
+  const totAll=sorted.reduce(function(s,r){return s+r.total;},0);
+  const abcMap=new Map();
+  let cum=0;
+  sorted.forEach(function(r){
+    cum+=r.total;
+    const p=cum/totAll;
+    abcMap.set(r.name+'|'+r.mgr, p<=0.8?'A':p<=0.95?'B':'C');
+  });
+  const xyzMap=new Map();
+  DATA.forEach(function(r){
+    const vals=r.mo.filter(function(v){return v>0;});
+    if(vals.length<2){xyzMap.set(r.name+'|'+r.mgr,'Z');return;}
+    const mean=vals.reduce(function(s,v){return s+v;},0)/vals.length;
+    const std=Math.sqrt(vals.reduce(function(s,v){return s+(v-mean)*(v-mean);},0)/vals.length);
+    const cv=mean>0?std/mean:1;
+    xyzMap.set(r.name+'|'+r.mgr,cv<=0.25?'X':cv<=0.5?'Y':'Z');
+  });
+  return DATA.map(function(r){
+    const k=r.name+'|'+r.mgr;
+    const a=abcMap.get(k)||'C', x=xyzMap.get(k)||'Z';
+    return Object.assign({},r,{abc:a,xyz:x,abcxyz:a+x});
+  });
+}
+const ABC_MAT_DESC={
+  AX:'Приоритет: высокая выручка, стабильно',
+  AY:'Высокая выручка, умеренная нестабильность',
+  AZ:'Высокая выручка, но хаотичный спрос — риск',
+  BX:'Стабильные средние — надёжная база',
+  BY:'Средние, умеренная нестабильность',
+  BZ:'Средние по выручке, непредсказуемые',
+  CX:'Мелкие, но предсказуемые',
+  CY:'Мелкие и умеренно нестабильные',
+  CZ:'Аутсайдеры: мало и хаотично',
+};
+function renderABCXYZ(m){
+  const rows=getABCXYZRows();
+  const matrix={};
+  ['A','B','C'].forEach(function(a){['X','Y','Z'].forEach(function(x){matrix[a+x]={cnt:0,rev:0,rows:[]};});});
+  rows.forEach(function(r){const k=r.abc+r.xyz;matrix[k].cnt++;matrix[k].rev+=r.total;matrix[k].rows.push(r);});
+  const totAll=rows.reduce(function(s,r){return s+r.total;},0);
+  const cntA=rows.filter(function(r){return r.abc==='A';}).length;
+  const cntB=rows.filter(function(r){return r.abc==='B';}).length;
+  const cntC=rows.filter(function(r){return r.abc==='C';}).length;
+  const cntX=rows.filter(function(r){return r.xyz==='X';}).length;
+  const cntY=rows.filter(function(r){return r.xyz==='Y';}).length;
+  const cntZ=rows.filter(function(r){return r.xyz==='Z';}).length;
+  const abcCols={'A':'rgba(16,185,129,.7)','B':'rgba(245,158,11,.7)','C':'rgba(86,112,154,.6)'};
+  const xyzCols={'X':'rgba(79,142,247,.7)','Y':'rgba(139,92,246,.7)','Z':'rgba(244,63,94,.7)'};
+  const matBg={'AX':'rgba(16,185,129,.14)','AZ':'rgba(244,63,94,.10)','CZ':'rgba(86,112,154,.08)'};
+  m.innerHTML='<div class="pg">'
+    +'<div class="pg-hd"><div class="pg-ti">ABC / XYZ анализ</div><div class="pg-su">Классификация по вкладу в выручку и стабильности спроса</div></div>'
+    +'<div class="cg22" style="margin-bottom:14px">'
+    +'<div class="cc"><div class="cc-ti">ABC — доля в выручке</div>'
+    +'<div style="display:flex;gap:6px;margin-bottom:10px">'
+    +[['A','#10b981','Топ 80% выручки',cntA],['B','#f59e0b','след. 15%',cntB],['C','#56709a','остальные',cntC]].map(function(x){return '<div style="flex:1;background:var(--s3);border-radius:8px;padding:10px;text-align:center"><div style="font-family:var(--fm);font-size:20px;font-weight:700;color:'+x[1]+'">'+x[0]+'</div><div style="font-size:18px;color:var(--wh);font-family:var(--fm)">'+x[3]+'</div><div style="font-size:10px;color:var(--mt);margin-top:2px">'+x[2]+'</div></div>';}).join('')
+    +'</div><div class="ch-wrap" style="height:130px"><canvas id="ch-abc"></canvas></div></div>'
+    +'<div class="cc"><div class="cc-ti">XYZ — стабильность (CV)</div>'
+    +'<div style="display:flex;gap:6px;margin-bottom:10px">'
+    +[['X','#4f8ef7','CV ≤25% стабильный',cntX],['Y','#8b5cf6','CV ≤50% переменный',cntY],['Z','#f43f5e','CV >50% хаотичный',cntZ]].map(function(x){return '<div style="flex:1;background:var(--s3);border-radius:8px;padding:10px;text-align:center"><div style="font-family:var(--fm);font-size:20px;font-weight:700;color:'+x[1]+'">'+x[0]+'</div><div style="font-size:18px;color:var(--wh);font-family:var(--fm)">'+x[3]+'</div><div style="font-size:10px;color:var(--mt);margin-top:2px">'+x[2]+'</div></div>';}).join('')
+    +'</div><div class="ch-wrap" style="height:130px"><canvas id="ch-xyz"></canvas></div></div>'
+    +'</div>'
+    +'<div class="cc" style="margin-bottom:14px"><div class="cc-ti">Матрица ABC × XYZ <span style="color:var(--acc)">· клик по ячейке → список клиентов</span></div>'
+    +'<div class="abc-matrix-wrap"><table class="abc-matrix"><thead><tr><td></td>'
+    +['X — стабильный','Y — переменный','Z — хаотичный'].map(function(h){return '<th style="font-size:10px;color:var(--mt);padding:0 0 6px;text-align:center">'+h+'</th>';}).join('')
+    +'</tr></thead><tbody>'
+    +['A','B','C'].map(function(a){
+      return '<tr><td style="font-size:10px;color:var(--mt);padding-right:8px;vertical-align:middle;white-space:nowrap">'+a+' — '+(a==='A'?'высокий':a==='B'?'средний':'низкий')+'</td>'
+        +['X','Y','Z'].map(function(x){
+          const k=a+x; const d=matrix[k];
+          const bg=matBg[k]||'rgba(255,255,255,.03)';
+          return '<td><div class="abc-cell" style="background:'+bg+'" data-mx="'+k+'">'
+            +'<div class="abc-cell-code"><span class="abadge ba'+a.toLowerCase()+' b'+a.toLowerCase()+'">'+a+'</span> <span class="abadge bx by bz b'+x.toLowerCase()+' x'+x.toLowerCase()+'">'+x+'</span></div>'
+            +'<div class="abc-cell-cnt">'+d.cnt+' клиентов</div>'
+            +'<div class="abc-cell-rev" style="color:var(--tx2)">'+fmt(d.rev)+'</div>'
+            +'<div class="abc-cell-desc">'+(ABC_MAT_DESC[k]||'')+'</div>'
+            +'</div></td>';
+        }).join('')+'</tr>';
+    }).join('')
+    +'</tbody></table></div></div>'
+    +'<div class="tw"><div class="tf">'
+    +'<select id="abc-filter"><option value="">Все категории</option>'+['AX','AY','AZ','BX','BY','BZ','CX','CY','CZ'].map(function(k){return '<option value="'+k+'">'+k+' ('+matrix[k].cnt+')</option>';}).join('')+'</select>'
+    +'<input id="abc-srch" placeholder="🔍 Поиск..." style="min-width:180px">'
+    +'</div><div id="abc-table" style="overflow-x:auto"></div></div>'
+    +'</div>';
+  const sc={x:{ticks:{color:'#56709a',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'},border:{display:false}},y:{ticks:{color:'#56709a',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'},border:{display:false}}};
+  CHARTS.abcCh=new Chart(document.getElementById('ch-abc'),{type:'bar',data:{labels:['A','B','C'],datasets:[{data:[rows.filter(function(r){return r.abc==='A';}).reduce(function(s,r){return s+r.total;},0),rows.filter(function(r){return r.abc==='B';}).reduce(function(s,r){return s+r.total;},0),rows.filter(function(r){return r.abc==='C';}).reduce(function(s,r){return s+r.total;},0)].map(function(v){return Math.round(v/1000);}),backgroundColor:['rgba(16,185,129,.7)','rgba(245,158,11,.7)','rgba(86,112,154,.6)'],borderRadius:5}]},options:{maintainAspectRatio:false,plugins:{...CHART_DEF.plugins,legend:{display:false}},scales:sc}});
+  CHARTS.xyzCh=new Chart(document.getElementById('ch-xyz'),{type:'bar',data:{labels:['X','Y','Z'],datasets:[{data:[cntX,cntY,cntZ],backgroundColor:['rgba(79,142,247,.7)','rgba(139,92,246,.7)','rgba(244,63,94,.7)'],borderRadius:5}]},options:{maintainAspectRatio:false,plugins:{...CHART_DEF.plugins,legend:{display:false}},scales:sc}});
+  function drawABCTable(cat){
+    const srch=(document.getElementById('abc-srch')||{value:''}).value.toLowerCase();
+    let list=cat?matrix[cat].rows:rows.slice();
+    if(srch)list=list.filter(function(r){return r.name.toLowerCase().includes(srch);});
+    list=list.slice().sort(function(a,b){return b.total-a.total;});
+    const tw=document.getElementById('abc-table');
+    if(!list.length){tw.innerHTML='<div class="no-data">Нет клиентов</div>';return;}
+    tw.innerHTML='<table><thead><tr><th>#</th><th>Клиент</th><th>Менеджер</th><th>ABC</th><th>XYZ</th><th>Выручка</th><th>Доля</th><th>Частота</th></tr></thead><tbody>'
+      +list.slice(0,80).map(function(r,i){
+        return '<tr style="cursor:pointer" data-abci="'+i+'">'
+          +'<td class="td-mono" style="color:var(--mt)">'+(i+1)+'</td>'
+          +'<td class="td-name" title="'+esc(r.name)+'">'+esc(r.name)+'</td>'
+          +'<td class="td-mgr">'+esc(r.mgr)+'</td>'
+          +'<td><span class="abadge b'+r.abc.toLowerCase()+'">'+r.abc+'</span></td>'
+          +'<td><span class="abadge b'+r.xyz.toLowerCase()+'">'+r.xyz+'</span></td>'
+          +'<td class="td-mono">'+fmt(r.total)+'</td>'
+          +'<td class="td-mono" style="color:var(--mt)">'+(r.total/totAll*100).toFixed(1)+'%</td>'
+          +'<td class="td-mono">'+r.mo.filter(function(v){return v>0;}).length+' мес.</td>'
+          +'</tr>';
+      }).join('')+'</tbody></table>';
+    tw.querySelectorAll('tbody tr').forEach(function(tr,i){tr.addEventListener('click',function(){showClientModal(list[i]);});});
+  }
+  m.querySelectorAll('[data-mx]').forEach(function(cell){cell.addEventListener('click',function(){
+    const k=cell.dataset.mx;
+    document.getElementById('abc-filter').value=k;
+    drawABCTable(k);
+    cell.closest('.cc').scrollIntoView({behavior:'smooth',block:'nearest'});
+  });});
+  document.getElementById('abc-filter').addEventListener('change',function(e){drawABCTable(e.target.value);});
+  document.getElementById('abc-srch').addEventListener('input',function(){drawABCTable(document.getElementById('abc-filter').value);});
+  drawABCTable('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ─── LTV ANALYSIS ─────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+function getLTVRows(){
+  return DATA.map(function(r){
+    const activeMo=r.mo.filter(function(v){return v>0;}).length;
+    const avgMonthly=activeMo>0?r.total/activeMo:0;
+    const retentionRate=activeMo/15;
+    const churnRate=Math.max(0.05,1-retentionRate);
+    const lifespan=Math.round(1/churnRate);
+    const ltv=Math.round(avgMonthly*lifespan);
+    const ltv_m=Math.round(ltv*0.25);
+    return Object.assign({},r,{activeMo,avgMonthly,retentionRate,lifespan,ltv,ltv_m});
+  }).sort(function(a,b){return b.ltv-a.ltv;});
+}
+function renderLTV(m){
+  const rows=getLTVRows();
+  const mgrs=[...new Set(DATA.map(function(r){return r.mgr;}))].sort();
+  const avgLTV=Math.round(rows.reduce(function(s,r){return s+r.ltv;},0)/rows.length)||0;
+  const totalLTV=rows.reduce(function(s,r){return s+r.ltv;},0)||1;
+  const top20=rows.slice(0,Math.ceil(rows.length*0.2));
+  const top20ltv=top20.reduce(function(s,r){return s+r.ltv;},0);
+  const tierH=rows.filter(function(r){return r.ltv>avgLTV*2;}).length;
+  const avgLife=Math.round(rows.reduce(function(s,r){return s+r.lifespan;},0)/rows.length)||0;
+  m.innerHTML='<div class="pg">'
+    +'<div class="pg-hd"><div class="pg-ti">LTV — Lifetime Value</div><div class="pg-su">Прогноз пожизненной ценности клиента для приоритизации менеджеров</div></div>'
+    +'<div class="ltv-formula">Формула: <strong>LTV = AvgMonthly × (1 / ChurnRate)</strong>. Churn = 1 − (активных мес. / 15). Маржинальный LTV = LTV × <strong>25%</strong>. Значения прогнозные.</div>'
+    +'<div class="kgrid">'
+    +'<div class="kcard kb"><div class="kcard-ic">💎</div><div class="kl">Средний LTV</div><div class="kv">'+fmt(avgLTV)+'</div><div class="kt fl">по базе</div></div>'
+    +'<div class="kcard kg"><div class="kcard-ic">🏆</div><div class="kl">Топ-20% = доля LTV</div><div class="kv">'+Math.round(top20ltv/totalLTV*100)+'%</div><div class="kt up">концентрация</div></div>'
+    +'<div class="kcard kr"><div class="kcard-ic">📈</div><div class="kl">Высокий LTV (2×avg+)</div><div class="kv">'+tierH+'</div><div class="kt up">приоритет</div></div>'
+    +'<div class="kcard kc"><div class="kcard-ic">⏱</div><div class="kl">Средний срок жизни</div><div class="kv">'+avgLife+' мес.</div><div class="kt fl">в среднем</div></div>'
+    +'</div>'
+    +'<div class="cg22" style="margin-bottom:14px">'
+    +'<div class="cc"><div class="cc-ti">Топ-15 клиентов по LTV</div><div class="ch-wrap" style="height:240px"><canvas id="ch-ltv-top"></canvas></div></div>'
+    +'<div class="cc"><div class="cc-ti">Средний LTV по менеджерам</div><div class="ch-wrap" style="height:240px"><canvas id="ch-ltv-mgr"></canvas></div></div>'
+    +'</div>'
+    +'<div class="tw"><div class="tf">'
+    +'<select id="ltv-mgr"><option value="">Все менеджеры</option>'+mgrs.map(function(x){return '<option value="'+esc(x)+'">'+esc(x)+'</option>';}).join('')+'</select>'
+    +'<select id="ltv-tier"><option value="">Все тиры</option><option value="high">🔴 Высокий (2×avg+)</option><option value="mid">🟡 Средний</option><option value="low">🟢 Ниже среднего</option></select>'
+    +'<input id="ltv-srch" placeholder="🔍 Поиск..." style="min-width:160px">'
+    +'</div><div id="ltv-table" style="overflow-x:auto"></div></div>'
+    +'</div>';
+  const sc={x:{ticks:{color:'#56709a',font:{size:8}},grid:{color:'rgba(255,255,255,.04)'},border:{display:false}},y:{ticks:{color:'#56709a',font:{size:9},callback:function(v){return fmt(v);}},grid:{color:'rgba(255,255,255,.04)'},border:{display:false}}};
+  const top15=rows.slice(0,15);
+  CHARTS.ltvTop=new Chart(document.getElementById('ch-ltv-top'),{type:'bar',data:{labels:top15.map(function(r){return r.name.split(' ').slice(0,2).join(' ');}),datasets:[{label:'LTV',data:top15.map(function(r){return r.ltv;}),backgroundColor:'rgba(139,92,246,.7)',borderRadius:4},{label:'LTV (маржа)',data:top15.map(function(r){return r.ltv_m;}),backgroundColor:'rgba(79,142,247,.5)',borderRadius:4}]},options:{maintainAspectRatio:false,plugins:{...CHART_DEF.plugins},scales:sc}});
+  const mgrLTV={};
+  rows.forEach(function(r){if(!mgrLTV[r.mgr]){mgrLTV[r.mgr]={sum:0,cnt:0};}mgrLTV[r.mgr].sum+=r.ltv;mgrLTV[r.mgr].cnt++;});
+  const mgrArr=Object.entries(mgrLTV).map(function(e){return{name:e[0].split(' ').slice(0,2).join(' '),avg:Math.round(e[1].sum/e[1].cnt)};}).sort(function(a,b){return b.avg-a.avg;}).slice(0,8);
+  CHARTS.ltvMgr=new Chart(document.getElementById('ch-ltv-mgr'),{type:'bar',data:{labels:mgrArr.map(function(x){return x.name;}),datasets:[{label:'Средний LTV',data:mgrArr.map(function(x){return x.avg;}),backgroundColor:PC.slice(0,8),borderRadius:4}]},options:{maintainAspectRatio:false,plugins:{...CHART_DEF.plugins,legend:{display:false}},scales:{x:{ticks:{color:'#56709a',font:{size:8}},grid:{color:'rgba(255,255,255,.04)'},border:{display:false}},y:{ticks:{color:'#56709a',font:{size:9},callback:function(v){return fmt(v);}},grid:{color:'rgba(255,255,255,.04)'},border:{display:false}}}}});
+  function drawLTVTable(){
+    const mgr=document.getElementById('ltv-mgr').value;
+    const tier=document.getElementById('ltv-tier').value;
+    const srch=document.getElementById('ltv-srch').value.toLowerCase();
+    let list=rows.slice();
+    if(mgr)list=list.filter(function(r){return r.mgr===mgr;});
+    if(tier==='high')list=list.filter(function(r){return r.ltv>avgLTV*2;});
+    else if(tier==='mid')list=list.filter(function(r){return r.ltv>avgLTV&&r.ltv<=avgLTV*2;});
+    else if(tier==='low')list=list.filter(function(r){return r.ltv<=avgLTV;});
+    if(srch)list=list.filter(function(r){return r.name.toLowerCase().includes(srch);});
+    const tw=document.getElementById('ltv-table');
+    if(!list.length){tw.innerHTML='<div class="no-data">Нет клиентов</div>';return;}
+    tw.innerHTML='<table><thead><tr><th>#</th><th>Клиент</th><th>Менеджер</th><th>LTV</th><th>LTV (маржа)</th><th>Ср.мес.выручка</th><th>Срок жизни</th><th>Удержание</th></tr></thead><tbody>'
+      +list.slice(0,80).map(function(r,i){
+        const tier2=r.ltv>avgLTV*2?'🔴':r.ltv>avgLTV?'🟡':'🟢';
+        const pct2=Math.round(r.retentionRate*100);
+        const pbar='<span class="pbar-wrap"><span class="pbar-fill" style="width:'+pct2+'%;background:'+(pct2>=60?'var(--gr)':pct2>=30?'var(--warm)':'var(--hot)')+'"></span></span>'+pct2+'%';
+        return '<tr style="cursor:pointer" data-ltvi="'+i+'">'
+          +'<td class="td-mono" style="color:var(--mt)">'+(i+1)+'</td>'
+          +'<td class="td-name" title="'+esc(r.name)+'">'+esc(r.name)+'</td>'
+          +'<td class="td-mgr">'+esc(r.mgr)+'</td>'
+          +'<td class="td-mono" style="color:var(--pu);font-weight:600">'+tier2+' '+fmt(r.ltv)+'</td>'
+          +'<td class="td-mono" style="color:var(--acc)">'+fmt(r.ltv_m)+'</td>'
+          +'<td class="td-mono">'+fmt(Math.round(r.avgMonthly))+'</td>'
+          +'<td class="td-mono">'+r.lifespan+' мес.</td>'
+          +'<td style="font-size:11px">'+pbar+'</td>'
+          +'</tr>';
+      }).join('')+'</tbody></table>';
+    tw.querySelectorAll('tbody tr').forEach(function(tr,i){tr.addEventListener('click',function(){showClientModal(list[i]);});});
+  }
+  ['ltv-mgr','ltv-tier'].forEach(function(id){document.getElementById(id).addEventListener('change',drawLTVTable);});
+  document.getElementById('ltv-srch').addEventListener('input',drawLTVTable);
+  drawLTVTable();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ─── COHORT ANALYSIS ──────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+function renderCohorts(m){
+  const cohortMap={};
+  DATA.forEach(function(r){
+    const firstMo=r.mo.findIndex(function(v){return v>0;});
+    if(firstMo<0)return;
+    if(!cohortMap[firstMo])cohortMap[firstMo]={label:ML[firstMo],firstMo:firstMo,clients:[]};
+    cohortMap[firstMo].clients.push(r);
+  });
+  const cohorts=Object.values(cohortMap).sort(function(a,b){return a.firstMo-b.firstMo;});
+  const maxOff=14;
+  const cohortData=cohorts.map(function(c){
+    const n=c.clients.length;
+    const ret=[];
+    for(var off=0;off<=maxOff;off++){
+      const moIdx=c.firstMo+off;
+      if(moIdx>14){ret.push(null);continue;}
+      const active=c.clients.filter(function(r){return(r.mo[moIdx]||0)>0;}).length;
+      ret.push(Math.round(active/n*100));
+    }
+    return{label:c.label,n:n,ret:ret};
+  });
+  const offLabels=Array.from({length:maxOff+1},function(_,i){return i===0?'M0':'M+'+i;});
+  function hcol(v){
+    if(v===null)return'transparent';
+    if(v===0)return'rgba(255,255,255,.03)';
+    if(v>=80)return'#1d4ed8';if(v>=60)return'#2563eb';if(v>=40)return'#3b82f6';
+    if(v>=20)return'#60a5fa';if(v>=5)return'#93c5fd';return'#bfdbfe';
+  }
+  function tcol(v){return(v===null||v===0)?'transparent':'rgba(255,255,255,.85)';}
+  const avgRet=offLabels.map(function(_,off){
+    const vals=cohortData.map(function(c){return c.ret[off];}).filter(function(v){return v!==null&&v!==undefined;});
+    return vals.length?Math.round(vals.reduce(function(s,v){return s+v;},0)/vals.length):null;
+  });
+  m.innerHTML='<div class="pg">'
+    +'<div class="pg-hd"><div class="pg-ti">Когортный анализ</div><div class="pg-su">Retention по месяцам с первой покупки — '+cohorts.length+' когорт</div></div>'
+    +'<div class="ai-card" style="margin-bottom:16px"><div class="ai-hd"><span class="ai-hd-ic">📖</span><span class="ai-hd-ti">Как читать матрицу</span></div>'
+    +'<div class="ai-body" style="font-size:12px;color:var(--tx2)"><b>M0</b> = месяц первой покупки (базовый). <b>M+1</b> = доля купивших в следующем месяце. Пустые ячейки — нет данных за период. Чем синее — тем выше удержание.</div></div>'
+    +'<div class="cc" style="margin-bottom:14px"><div class="cc-ti">Retention matrix <span>'+cohorts.length+' когорт × '+offLabels.length+' периодов</span></div>'
+    +'<div class="cohort-wrap"><table class="cohort-table"><thead><tr>'
+    +'<th class="cohort-th" style="text-align:left;padding-right:6px">Когорта</th>'
+    +'<th class="cohort-th">N</th>'
+    +offLabels.map(function(l){return '<th class="cohort-th">'+l+'</th>';}).join('')
+    +'</tr></thead><tbody>'
+    +cohortData.map(function(c){
+      return '<tr><td class="cohort-rn" title="'+c.label+'">'+c.label+'</td>'
+        +'<td style="font-family:var(--fm);font-size:10px;color:var(--tx2);padding:0 6px;text-align:center">'+c.n+'</td>'
+        +c.ret.map(function(v,i){return '<td><div class="cohort-cell" style="background:'+hcol(v)+';color:'+tcol(v)+'" title="'+c.label+' '+offLabels[i]+': '+(v===null?'нет данных':v+'%')+'">'+( v===null?'':v+'%')+'</div></td>';}).join('')
+        +'</tr>';
+    }).join('')
+    +'</tbody></table></div>'
+    +'<div class="hm-legend" style="margin-top:10px"><span>0%</span>'
+    +[['#bfdbfe','10%'],['#93c5fd','25%'],['#60a5fa','40%'],['#3b82f6','60%'],['#2563eb','80%'],['#1d4ed8','100%']].map(function(x){return '<span class="hm-lc" style="background:'+x[0]+'"></span><span style="font-size:10px;color:var(--mt)">'+x[1]+'</span>';}).join('')
+    +'</div></div>'
+    +'<div class="cc"><div class="cc-ti">Средний Retention по месяцам <span>% активных клиентов когорты</span></div>'
+    +'<div class="ch-wrap" style="height:200px"><canvas id="ch-cohort-avg"></canvas></div></div>'
+    +'</div>';
+  CHARTS.cohortAvg=new Chart(document.getElementById('ch-cohort-avg'),{
+    type:'line',
+    data:{labels:offLabels,datasets:[{label:'Avg Retention %',data:avgRet,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.12)',fill:true,tension:.4,borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#3b82f6',spanGaps:true}]},
+    options:{maintainAspectRatio:false,plugins:{...CHART_DEF.plugins,legend:{display:false}},scales:{x:{ticks:{color:'#56709a',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'},border:{display:false}},y:{min:0,max:100,ticks:{color:'#56709a',font:{size:9},callback:function(v){return v+'%';}},grid:{color:'rgba(255,255,255,.04)'},border:{display:false}}}}
+  });
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────
+Chart.defaults.color='#7a94bb';
+Chart.defaults.borderColor='rgba(255,255,255,.05)';
+
+// ── THEME TOGGLE ──────────────────────────────────────────────────────────
+function applyTheme(){
+  if(DARK_MODE){
+    document.documentElement.classList.remove('light');
+    Chart.defaults.color='#7a94bb';
+    Chart.defaults.borderColor='rgba(255,255,255,.05)';
+  } else {
+    document.documentElement.classList.add('light');
+    Chart.defaults.color='#436078';
+    Chart.defaults.borderColor='rgba(30,60,120,.07)';
+  }
+  const btn=document.getElementById('theme-btn');
+  if(btn)btn.textContent=DARK_MODE?'☀️':'🌙';
+}
+document.addEventListener('click',function(e){
+  if(e.target.id==='theme-btn'){
+    DARK_MODE=!DARK_MODE;
+    applyTheme();
+    if(DATA.length)renderPage();
+  }
+});
+
+// ── MOBILE OVERFLOW FIX ───────────────────────────────────────────────────
+function fixMobileOverflow(){
+  const mobile=window.innerWidth<=860;
+  document.body.style.overflow=mobile?'auto':'hidden';
+  document.documentElement.style.overflow=mobile?'auto':'hidden';
+  const app=document.getElementById('app');
+  if(app)app.style.height=mobile?'auto':'100vh';
+}
+window.addEventListener('resize',fixMobileOverflow);
+fixMobileOverflow();
+
+buildSidebar();
+renderPage();
+</script>
+</body>
+</html>
