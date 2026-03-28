@@ -60,9 +60,16 @@ def sanitize_data(data):
 @app.route('/')
 def index():
     """Возвращает главный HTML файл аналитической панели"""
-    # Получаем абсолютный путь к директории со скриптом
+    # Явно указываем имя файла
+    filename = 'ML_Продажник_Pro_v4.html'
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    return send_from_directory(base_dir, 'ML_Продажник_Pro_v4.html')
+    file_path = os.path.join(base_dir, filename)
+    
+    # Проверяем существование файла для отладки
+    if not os.path.exists(file_path):
+        return jsonify({'error': f'Файл {filename} не найден', 'path': base_dir}), 500
+    
+    return send_from_directory(base_dir, filename)
 
 # 🔍 Эндпоинт для проверки работоспособности сервера
 @app.route('/api/health')
@@ -176,6 +183,15 @@ if __name__ == '__main__':
     # Получаем порт из переменной окружения или используем 5000 по умолчанию
     port = int(os.environ.get('PORT', 5000))
     
-    # Запускаем сервер в режиме отладки
+    # Запускаем сервер
     # host='0.0.0.0' — делает сервер доступным извне контейнера
-    app.run(debug=True, host='0.0.0.0', port=port)
+    # use_reloader=False — отключаем автоперезагрузку для стабильности в Codespaces
+    # debug=True — включаем режим отладки
+    print("=" * 60)
+    print("🚀 Сервер ML Продажник запущен!")
+    print(f"📍 Порт: {port}")
+    print(f"🌐 Локальный адрес: http://localhost:{port}")
+    print("💡 Для GitHub Codespaces используйте ссылку из панели портов")
+    print("=" * 60)
+    
+    app.run(debug=True, host='0.0.0.0', port=port, use_reloader=False)
