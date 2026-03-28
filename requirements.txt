@@ -1,5 +1,16 @@
+# requirements.txt — зависимости для Flask приложения ML Продажник
+
+# Flask — веб-фреймворк для создания сервера
 flask==3.0.0
+
+# Flask-CORS — поддержка Cross-Origin Resource Sharing для запросов из браузера
 flask-cors==4.0.0
+
+# pandas — библиотека для анализа и обработки данных
 pandas==2.1.4
+
+# openpyxl — работа с Excel файлами (.xlsx)
 openpyxl==3.1.2
+
+# python-dotenv — загрузка переменных окружения из .env файла
 python-dotenv==1.0.0
