@@ -61,13 +61,8 @@ def sanitize_data(data):
 def index():
     """Возвращает главный HTML файл аналитической панели"""
     # Явно указываем имя файла
-    filename = 'ML_Продажник_Pro_v4.html'
+    filename = 'index.html'
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(base_dir, filename)
-    
-    # Проверяем существование файла для отладки
-    if not os.path.exists(file_path):
-        return jsonify({'error': f'Файл {filename} не найден', 'path': base_dir}), 500
     
     return send_from_directory(base_dir, filename)
 
