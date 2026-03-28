@@ -4,6 +4,7 @@ from flask_cors import CORS
 import os
 import csv
 from io import StringIO
+import html
 
 # Инициализация Flask приложения
 # static_folder='.' — указывает, что статические файлы находятся в текущей директории
@@ -12,6 +13,48 @@ app = Flask(__name__, static_folder='.', static_url_path='')
 
 # Включаем поддержку CORS для запросов из браузера
 CORS(app)
+
+
+def validate_csv_structure(df):
+    """
+    Валидация структуры CSV файла.
+    Возвращает кортеж (bool, str): (успех, сообщение)
+    """
+    if df.empty:
+        return False, 'DataFrame пуст'
+    
+    required_columns = {'date', 'product', 'revenue', 'cost'}
+    actual_columns = set(col.lower().strip() for col in df.columns)
+    
+    missing_columns = required_columns - actual_columns
+    if missing_columns:
+        return False, f'Отсутствуют обязательные колонки: {", ".join(missing_columns)}'
+    
+    # Проверка на null значения
+    null_counts = df.isnull().sum()
+    if null_counts.any():
+        null_cols = null_counts[null_counts > 0].index.tolist()
+        return True, f'Предупреждение: найдены null значения в колонках: {", ".join(null_cols)}'
+    
+    return True, 'Структура CSV корректна'
+
+
+def sanitize_data(data):
+    """
+    Санитизация данных для защиты от XSS атак.
+    Экранирует HTML теги и специальные символы.
+    """
+    if data is None:
+        return ''
+    
+    if isinstance(data, (int, float)):
+        return data
+    
+    if isinstance(data, str):
+        # Экранируем HTML специальные символы
+        return html.escape(data, quote=True)
+    
+    return str(data)
 
 # 🏠 Главная страница — отдаём HTML файл интерфейса
 @app.route('/')
