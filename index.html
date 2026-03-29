@@ -924,7 +924,8 @@ function buildSidebar(){
       ${p.id==='scoring'&&hot>0?`<span class="ni-badge">${hot}</span>`:''}
     </button>`).join('')+`
     <div class="sb-sep"></div>
-    <button class="ni" id="btn-reload"><span class="ni-ic">📂</span>Новый файл</button>`;
+    <button class="ni" id="btn-reload"><span class="ni-ic">📂</span>Новый файл</button>
+    <button class="ni" onclick="openSettings()"><span class="ni-ic">⚙️</span>Настройки</button>`;
   nav.querySelectorAll('[data-page]').forEach(btn=>{
     btn.addEventListener('click',()=>{PAGE=btn.dataset.page;buildSidebar();renderPage();});});
   const rb=document.getElementById('btn-reload');
@@ -2053,6 +2054,30 @@ fixMobileOverflow();
 
 buildSidebar();
 renderPage();
+
+// --- Настройки AI ---
+function openSettings() {
+  const m = document.getElementById('settingsModal');
+  if(!m) return;
+  m.style.display = 'block';
+  document.getElementById('aiEndpoint').value = localStorage.getItem('aiEndpoint') || 'https://api.openai.com/v1/chat/completions';
+  document.getElementById('aiKey').value = localStorage.getItem('aiKey') || '';
+  document.getElementById('aiModel').value = localStorage.getItem('aiModel') || 'gpt-3.5-turbo';
+}
+function closeSettings() {
+  const m = document.getElementById('settingsModal');
+  if(m) m.style.display = 'none';
+}
+function saveSettings() {
+  localStorage.setItem('aiEndpoint', document.getElementById('aiEndpoint').value);
+  localStorage.setItem('aiKey', document.getElementById('aiKey').value);
+  localStorage.setItem('aiModel', document.getElementById('aiModel').value);
+  alert('✅ Настройки сохранены!');
+  closeSettings();
+}
+window.onclick = function(e) {
+  const m = document.getElementById('settingsModal');
+  if (e.target == m) m.style.display = "none";
+}
+
 </script>
-</body>
-</html>
