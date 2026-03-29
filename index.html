@@ -608,6 +608,7 @@ html.light .hm-cell{border-radius:3px!important;}
     <div class="sb-logo">
       <div class="sb-logo-wrap">
         <div class="sb-logo-ic">📊</div>
+        <button class="menu-btn" onclick="openSettings()" style="width:100%; padding:12px; background:none; border:none; color:#fff; cursor:pointer; text-align:left; font-size:16px;">⚙️ Настройки AI & ML</button>
         <button class="theme-btn" id="theme-btn" title="Тема">☀️</button>
         <div>
           <h1>ML <span>Продажник</span></h1>
@@ -2056,3 +2057,179 @@ renderPage();
 </script>
 </body>
 </html>
+
+<!-- ML & AI Settings Modal -->
+<div id="settingsModal" class="modal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5);">
+  <div style="background:#fff; margin:10% auto; padding:20px; border-radius:8px; width:400px; position:relative;">
+    <span onclick="closeSettings()" style="position:absolute; right:15px; top:10px; cursor:pointer; font-size:24px;">&times;</span>
+    <h2>⚙️ Настройки AI & ML</h2>
+    
+    <label style="display:block; margin-top:15px;"><b>AI API Endpoint</b> (URL провайдера)</label>
+    <input type="text" id="aiEndpoint" placeholder="https://api.openai.com/v1/chat/completions" style="width:100%; padding:8px; margin-top:5px; border:1px solid #ddd; border-radius:4px;">
+    <small style="color:#666;">Пример для OpenAI, DeepSeek, LocalAI</small>
+
+    <label style="display:block; margin-top:15px;"><b>AI API Key</b></label>
+    <input type="password" id="aiKey" placeholder="sk-..." style="width:100%; padding:8px; margin-top:5px; border:1px solid #ddd; border-radius:4px;">
+
+    <label style="display:block; margin-top:15px;"><b>Model Name</b></label>
+    <input type="text" id="aiModel" placeholder="gpt-3.5-turbo" style="width:100%; padding:8px; margin-top:5px; border:1px solid #ddd; border-radius:4px;">
+
+    <button onclick="saveSettings()" style="margin-top:20px; width:100%; padding:10px; background:#27ae60; color:white; border:none; border-radius:4px; cursor:pointer;">Сохранить</button>
+  </div>
+</div>
+
+<script>
+// Функции настроек
+function openSettings() {
+  document.getElementById('settingsModal').style.display = 'block';
+  document.getElementById('aiEndpoint').value = localStorage.getItem('aiEndpoint') || 'https://api.openai.com/v1/chat/completions';
+  document.getElementById('aiKey').value = localStorage.getItem('aiKey') || '';
+  document.getElementById('aiModel').value = localStorage.getItem('aiModel') || 'gpt-3.5-turbo';
+}
+
+function closeSettings() {
+  document.getElementById('settingsModal').style.display = 'none';
+}
+
+function saveSettings() {
+  const endpoint = document.getElementById('aiEndpoint').value;
+  const key = document.getElementById('aiKey').value;
+  const model = document.getElementById('aiModel').value;
+  
+  localStorage.setItem('aiEndpoint', endpoint);
+  localStorage.setItem('aiKey', key);
+  localStorage.setItem('aiModel', model);
+  
+  alert('Настройки сохранены!');
+  closeSettings();
+}
+
+// Обновленная функция loadAIInsights с универсальной поддержкой
+async function loadAIInsights() {
+  const endpoint = localStorage.getItem('aiEndpoint');
+  const key = localStorage.getItem('aiKey');
+  const model = localStorage.getItem('aiModel');
+
+  if (!key || !endpoint) {
+    alert('Пожалуйста, настройте API ключ и эндпоинт в разделе "Настройки" (⚙️).');
+    return;
+  }
+
+  // Сбор данных для анализа
+  const data = window.salesData || [];
+  const summary = `Всего клиентов: ${data.length}. Общая выручка: ${data.reduce((s, c) => s + (c.monetary||0), 0)}.`;
+  
+  const prompt = `Проанализируй данные CRM: ${summary}. Дай 3 кратких совета по увеличению продаж.`;
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${key}`
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: [{role: "user", content: prompt}]
+      })
+    });
+
+    if (!response.ok) throw new Error(`Ошибка API: ${response.status}`);
+    
+    const result = await response.json();
+    const text = result.choices ? result.choices[0].message.content : JSON.stringify(result);
+    
+    document.getElementById('aiOutput').innerHTML = `<div class="insight-card"><h3>🤖 AI Инсайт</h3><p>${text}</p></div>`;
+  } catch (err) {
+    document.getElementById('aiOutput').innerHTML = `<div class="error-card">Ошибка: ${err.message}</div>`;
+  }
+}
+</script>
+
+<!-- ML & AI Settings Modal -->
+<div id="settingsModal" class="modal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5);">
+  <div style="background:#fff; margin:10% auto; padding:20px; border-radius:8px; width:400px; position:relative;">
+    <span onclick="closeSettings()" style="position:absolute; right:15px; top:10px; cursor:pointer; font-size:24px;">&times;</span>
+    <h2>⚙️ Настройки AI & ML</h2>
+    
+    <label style="display:block; margin-top:15px;"><b>AI API Endpoint</b> (URL провайдера)</label>
+    <input type="text" id="aiEndpoint" placeholder="https://api.openai.com/v1/chat/completions" style="width:100%; padding:8px; margin-top:5px; border:1px solid #ddd; border-radius:4px;">
+    <small style="color:#666;">Пример для OpenAI, DeepSeek, LocalAI</small>
+
+    <label style="display:block; margin-top:15px;"><b>AI API Key</b></label>
+    <input type="password" id="aiKey" placeholder="sk-..." style="width:100%; padding:8px; margin-top:5px; border:1px solid #ddd; border-radius:4px;">
+
+    <label style="display:block; margin-top:15px;"><b>Model Name</b></label>
+    <input type="text" id="aiModel" placeholder="gpt-3.5-turbo" style="width:100%; padding:8px; margin-top:5px; border:1px solid #ddd; border-radius:4px;">
+
+    <button onclick="saveSettings()" style="margin-top:20px; width:100%; padding:10px; background:#27ae60; color:white; border:none; border-radius:4px; cursor:pointer;">Сохранить</button>
+  </div>
+</div>
+
+<script>
+// Функции настроек
+function openSettings() {
+  document.getElementById('settingsModal').style.display = 'block';
+  document.getElementById('aiEndpoint').value = localStorage.getItem('aiEndpoint') || 'https://api.openai.com/v1/chat/completions';
+  document.getElementById('aiKey').value = localStorage.getItem('aiKey') || '';
+  document.getElementById('aiModel').value = localStorage.getItem('aiModel') || 'gpt-3.5-turbo';
+}
+
+function closeSettings() {
+  document.getElementById('settingsModal').style.display = 'none';
+}
+
+function saveSettings() {
+  const endpoint = document.getElementById('aiEndpoint').value;
+  const key = document.getElementById('aiKey').value;
+  const model = document.getElementById('aiModel').value;
+  
+  localStorage.setItem('aiEndpoint', endpoint);
+  localStorage.setItem('aiKey', key);
+  localStorage.setItem('aiModel', model);
+  
+  alert('Настройки сохранены!');
+  closeSettings();
+}
+
+// Обновленная функция loadAIInsights с универсальной поддержкой
+async function loadAIInsights() {
+  const endpoint = localStorage.getItem('aiEndpoint');
+  const key = localStorage.getItem('aiKey');
+  const model = localStorage.getItem('aiModel');
+
+  if (!key || !endpoint) {
+    alert('Пожалуйста, настройте API ключ и эндпоинт в разделе "Настройки" (⚙️).');
+    return;
+  }
+
+  // Сбор данных для анализа
+  const data = window.salesData || [];
+  const summary = `Всего клиентов: ${data.length}. Общая выручка: ${data.reduce((s, c) => s + (c.monetary||0), 0)}.`;
+  
+  const prompt = `Проанализируй данные CRM: ${summary}. Дай 3 кратких совета по увеличению продаж.`;
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${key}`
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: [{role: "user", content: prompt}]
+      })
+    });
+
+    if (!response.ok) throw new Error(`Ошибка API: ${response.status}`);
+    
+    const result = await response.json();
+    const text = result.choices ? result.choices[0].message.content : JSON.stringify(result);
+    
+    document.getElementById('aiOutput').innerHTML = `<div class="insight-card"><h3>🤖 AI Инсайт</h3><p>${text}</p></div>`;
+  } catch (err) {
+    document.getElementById('aiOutput').innerHTML = `<div class="error-card">Ошибка: ${err.message}</div>`;
+  }
+}
+</script>
