@@ -48,13 +48,24 @@ const LinearRegression = (function() {
         const learningRate = options.learningRate || 0.01;
         const iterations = options.iterations || 100;
         
-        if (!data || data.length === 0) {
+        // Валидация входных данных
+        if (!data || data.length < 2) {
+            console.warn('[LinearRegression] Недостаточно данных для обучения (требуется >= 2)');
+            return { weights: [], bias: 0, min: [], max: [], targetMin: 0, targetMax: 1, trained: false };
+        }
+        
+        // Фильтруем некорректные данные
+        const validData = data.filter(d => 
+            d && d.features && typeof d.target === 'number' && isFinite(d.target)
+        );
+        if (validData.length < 2) {
+            console.warn('[LinearRegression] Недостаточно корректных данных');
             return { weights: [], bias: 0, min: [], max: [], targetMin: 0, targetMax: 1, trained: false };
         }
         
         // Извлекаем признаки и целевые значения
-        const X = data.map(d => d.features);
-        const y = data.map(d => d.target);
+        const X = validData.map(d => d.features);
+        const y = validData.map(d => d.target);
         
         // Нормализуем признаки
         const { normalized: XNorm, min, max } = normalize(X);
@@ -62,23 +73,32 @@ const LinearRegression = (function() {
         // Нормализуем целевые значения
         let targetMin = Math.min(...y);
         let targetMax = Math.max(...y);
+        
+        // Избегаем деления на ноль
+        if (targetMin === targetMax) {
+            targetMax = targetMin + 1;
+        }
+        
         const yNorm = y.map(val => {
             const range = targetMax - targetMin;
-            if (range === 0) return 0;
             return (val - targetMin) / range;
         });
         
         const numFeatures = XNorm[0].length;
         const numSamples = XNorm.length;
         
-        // Инициализируем веса и смещение
-        let weights = new Array(numFeatures).fill(0);
+        // Инициализируем веса случайными значениями
+        let weights = new Array(numFeatures).fill(0).map(() => Math.random() * 0.01);
         let bias = 0;
+        
+        let prevMSE = Infinity;
+        const tolerance = 1e-6;
         
         // Градиентный спуск
         for (let iter = 0; iter < iterations; iter++) {
             let dw = new Array(numFeatures).fill(0);
             let db = 0;
+            let mse = 0;
             
             for (let i = 0; i < numSamples; i++) {
                 // Предсказание
@@ -88,8 +108,9 @@ const LinearRegression = (function() {
                 }
                 const pred = z;
                 
-                // Ошибка
+                // MSE для мониторинга
                 const error = pred - yNorm[i];
+                mse += error * error;
                 
                 // Градиенты
                 for (let j = 0; j < numFeatures; j++) {
@@ -98,11 +119,21 @@ const LinearRegression = (function() {
                 db += error;
             }
             
-            // Обновление весов
-            for (let j = 0; j < numFeatures; j++) {
-                weights[j] -= learningRate * (dw[j] / numSamples);
+            mse /= numSamples;
+            
+            // Проверка сходимости
+            if (Math.abs(prevMSE - mse) < tolerance) {
+                console.log('[LinearRegression] Сходимость достигнута на итерации', iter, 'MSE:', mse.toFixed(6));
+                break;
             }
-            bias -= learningRate * (db / numSamples);
+            prevMSE = mse;
+            
+            // Обновление весов с адаптивным learning rate
+            const effectiveLR = learningRate / (1 + iter * 0.0005);
+            for (let j = 0; j < numFeatures; j++) {
+                weights[j] -= effectiveLR * (dw[j] / numSamples);
+            }
+            bias -= effectiveLR * (db / numSamples);
         }
         
         return {
@@ -123,26 +154,36 @@ const LinearRegression = (function() {
      * @returns {number} предсказанное значение
      */
     function predictNextValue(features, model) {
-        if (!model.trained || !model.weights || model.weights.length === 0) {
+        if (!model || !model.trained || !model.weights || model.weights.length === 0) {
             return 0; // Возвращаем 0 если модель не обучена
+        }
+        
+        // Валидация входных данных
+        if (!features || !Array.isArray(features) || features.length !== model.weights.length) {
+            console.warn('[LinearRegression] Некорректные признаки для предсказания');
+            return 0;
         }
         
         // Нормализуем входные данные
         const normalizedFeatures = [];
         for (let i = 0; i < features.length; i++) {
+            const val = parseFloat(features[i]) || 0;
             const range = model.max[i] - model.min[i];
             if (range === 0) {
-                normalizedFeatures.push(0);
+                normalizedFeatures.push(0.5);
             } else {
-                normalizedFeatures.push((features[i] - model.min[i]) / range);
+                normalizedFeatures.push((val - model.min[i]) / range);
             }
         }
         
-        // Вычисляем предсказание
-        let z = model.bias;
+        // Вычисляем предсказание (нормализованное)
+        let z = model.bias || 0;
         for (let i = 0; i < normalizedFeatures.length; i++) {
             z += model.weights[i] * normalizedFeatures[i];
         }
+        
+        // Ограничиваем [0, 1]
+        z = Math.min(1, Math.max(0, z));
         
         // Денормализуем результат
         const range = model.targetMax - model.targetMin;

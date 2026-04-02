@@ -1475,19 +1475,24 @@ function compute(raw){
   if (typeof MLService !== 'undefined' && clients.length > 0) {
     try {
       const mlResult = MLService.runMLPipeline(clients);
-      if (mlResult.modelsTrained) {
-        // Добавляем ML предсказания к каждому клиенту
+      if (mlResult.modelsTrained && mlResult.predictions.length > 0) {
+        // Добавляем ML предсказания к каждому клиенту по индексу
         mlResult.predictions.forEach(pred => {
-          const client = clients.find(c => c.name === pred.clientId || c.mgr === pred.clientId);
-          if (client) {
-            client.mlProbability = pred.mlProbability;
-            client.mlPrediction = pred.mlPrediction;
+          if (pred && pred.index >= 0 && pred.index < clients.length) {
+            const client = clients[pred.index];
+            if (client) {
+              client.mlProbability = pred.mlProbability;
+              client.mlPrediction = pred.mlPrediction;
+              client.mlReady = true;
+            }
           }
         });
-        console.log('[ML] Предсказания добавлены для', mlResult.predictions.length, 'клиентов');
+        console.log('[MLService] ✓ ML предсказания добавлены для', mlResult.predictions.length, 'клиентов');
+      } else {
+        console.warn('[MLService] Модели не обучены или нет предсказаний');
       }
     } catch (err) {
-      console.error('[ML] Ошибка при выполнении ML пайплайна:', err);
+      console.error('[MLService] Ошибка при выполнении ML пайплайна:', err);
     }
   }
   
@@ -1524,6 +1529,12 @@ function showClientModal(r){
   const trend3p=r.mo.slice(-6,-3).reduce((a,b)=>a+b,0);
   const trendDir=trend3p>0?((trend3-trend3p)/trend3p*100):0;
   const aiAvail=hasAIKey();
+  
+  // ML информация
+  const mlProb=r.mlProbability?Math.round(r.mlProbability*100):'—';
+  const mlPred=r.mlPrediction?fmt(r.mlPrediction):'—';
+  const mlBgColor=r.mlProbability?(r.mlProbability>=0.7?'rgba(244,63,94,.1)':r.mlProbability>=0.4?'rgba(245,158,11,.08)':'rgba(86,112,154,.1)'):'';
+  const mlBorderColor=r.mlProbability?(r.mlProbability>=0.7?'rgba(244,63,94,.25)':r.mlProbability>=0.4?'rgba(245,158,11,.2)':'rgba(86,112,154,.2)'):'';
 
   ov.innerHTML=`<div class="modal" style="width:720px">
     <button class="modal-cl" id="mc-cls">✕</button>
@@ -1542,6 +1553,26 @@ function showClientModal(r){
       <div class="mkpi"><div class="mkpi-l">Посл. покупка</div><div class="mkpi-v">${lastBuy}</div></div>
       <div class="mkpi"><div class="mkpi-l">Следующая</div><div class="mkpi-v">${nextTxt(r.nd)}</div></div>
     </div>
+    ${r.mlProbability?`<div style="background:${mlBgColor};border:1px solid ${mlBorderColor};border-radius:var(--rad-sm);padding:14px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="font-size:12px;font-weight:700;color:var(--wh)">🧠 ML Прогноз</span>
+        <span style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--mt)">v1.0</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px">
+        <div>
+          <div style="font-size:10px;color:var(--mt);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Вероятность покупки</div>
+          <div style="font-size:18px;font-weight:700;font-family:var(--fm);color:${r.mlProbability>=0.7?'#f43f5e':r.mlProbability>=0.4?'#f59e0b':'#56709a'}">${mlProb}%</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--mt);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Прогноз размера</div>
+          <div style="font-size:18px;font-weight:700;font-family:var(--fm);color:var(--acc)">${mlPred}</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--tx2);line-height:1.5">
+        <strong>Модель:</strong> логистическая регрессия на признаках RFM (давность, частота, значение, тренд). 
+        Прогноз обновляется при загрузке новых данных.
+      </div>
+    </div>`:''}
     <div id="mc-ai-result"></div>
     <div class="cc" style="margin-bottom:14px"><div class="cc-ti">Динамика продаж <span>руб.</span></div><div class="ch-wrap" style="height:160px"><canvas id="mc-chart"></canvas></div></div>
     ${prods.length?`<div class="cc"><div class="cc-ti">Товарные группы <span>топ-6</span></div>
@@ -2593,19 +2624,30 @@ function drawClients(){
   if(!rows.length){el.innerHTML='<div class="no-data">Нет клиентов по фильтрам</div>';return;}
   el.innerHTML=`<div class="cgrid">${shown.map((r,i)=>{
     const p=pct(r.prob),col=p>=70?'var(--hot)':p>=40?'var(--warm)':'var(--mt)';
+    const mlProb=r.mlProbability?Math.round(r.mlProbability*100):null;
+    const mlColor=mlProb?mlProb>=70?'#34d399':mlProb>=40?'#fbbf24':'#8896ae':'transparent';
+    const mlPred=r.mlPrediction?fmt(r.mlPrediction):'—';
+    const mlBadge=r.mlProbability?`<span class="ai-tag-${mlProb>=70?'hot':mlProb>=40?'warm':'cold'}" style="font-size:9px;padding:2px 6px">${mlProb}% ML</span>`:'';
     return`<div class="clic" style="cursor:pointer" data-cli="${i}">
       <div class="clic-nm" title="${esc(r.name)}">${esc(r.name)}</div>
       <div class="clic-mgr">${esc(r.mgr)}</div>
       <div class="clic-bar"><div style="height:5px;width:${p}%;background:${col};border-radius:3px"></div></div>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-        <span style="font-family:var(--fm);font-size:13px;color:${col};font-weight:600">${p}%</span>
-        ${trendHtml(r.tr)}
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-family:var(--fm);font-size:13px;color:${col};font-weight:600">${p}%</span>
+          ${trendHtml(r.tr)}
+        </div>
+        ${mlBadge}
       </div>
       <div class="clic-stats">
         <div><div class="clic-stat-l">Выручка</div><div class="clic-stat-v">${fmt(r.total)}</div></div>
         <div><div class="clic-stat-l">Следующая</div><div class="clic-stat-v" style="font-size:10px">${nextTxt(r.nd)}</div></div>
         <div><div class="clic-stat-l">Посл. пок.</div><div class="clic-stat-v" style="font-size:10px">${r.rec>=0?ML[r.rec]:'—'}</div></div>
       </div>
+      ${r.mlPrediction?`<div style="margin-top:8px;padding:8px;background:rgba(79,142,247,.08);border-radius:6px;border-left:3px solid var(--acc)">
+        <div style="font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">🧠 ML Прогноз</div>
+        <div style="font-size:11px;color:var(--tx)"><strong>${mlPred}</strong> (вероятность: <span style="color:${mlColor};font-weight:600">${mlProb}%</span>)</div>
+      </div>`:''}
       ${r.tg&&r.tg!=='Нет данных'?`<div style="margin-top:8px;font-size:10px;color:var(--mt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.tg)}">${esc(r.tg)}</div>`:''}
     </div>`;}).join('')}
     ${rows.length>120?`<div style="text-align:center;padding:20px;color:var(--mt);font-size:12px;grid-column:1/-1">Показано 120 из ${rows.length}</div>`:''}
