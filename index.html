@@ -6,6 +6,9 @@
 <title>ML Продажник Pro</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="ml/logistic.js"></script>
+<script src="ml/regression.js"></script>
+<script src="ml/mlService.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <style>
@@ -1438,7 +1441,7 @@ function compute(raw){
   const act=raw.filter(c=>c.mo.reduce((a,b)=>a+b,0)>0);
   const tots=act.map(c=>c.mo.reduce((a,b)=>a+b,0));
   const mx=Math.max(...tots,1);
-  return act.map((c,i)=>{
+  const clients = act.map((c,i)=>{
     const m=c.mo,tot=tots[i],freq=m.filter(v=>v>0).length;
     let rec=-1;for(let j=m.length-1;j>=0;j--){if(m[j]>0){rec=j;break;}}
     const l3=m.slice(-3).reduce((a,b)=>a+b,0),p3=m.slice(-6,-3).reduce((a,b)=>a+b,0);
@@ -1467,6 +1470,28 @@ function compute(raw){
     return{name:c.name,mgr:c.mgr,prob,total:tot,mo:m,rec,tr,nd,
       tg:te?te[0]:(c._lg||'Нет данных'),prod:c.prod,prodMo:c.prodMo||{}};
   }).sort((a,b)=>b.prob-a.prob);
+  
+  // Запускаем ML пайплайн после вычислений
+  if (typeof MLService !== 'undefined' && clients.length > 0) {
+    try {
+      const mlResult = MLService.runMLPipeline(clients);
+      if (mlResult.modelsTrained) {
+        // Добавляем ML предсказания к каждому клиенту
+        mlResult.predictions.forEach(pred => {
+          const client = clients.find(c => c.name === pred.clientId || c.mgr === pred.clientId);
+          if (client) {
+            client.mlProbability = pred.mlProbability;
+            client.mlPrediction = pred.mlPrediction;
+          }
+        });
+        console.log('[ML] Предсказания добавлены для', mlResult.predictions.length, 'клиентов');
+      }
+    } catch (err) {
+      console.error('[ML] Ошибка при выполнении ML пайплайна:', err);
+    }
+  }
+  
+  return clients;
 }
 function fmt(v){if(v>=1e6)return(v/1e6).toFixed(1)+' млн';if(v>=1e3)return(v/1e3).toFixed(0)+' тыс';return Math.round(v)+'';}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
@@ -1674,13 +1699,13 @@ async function runAIClientAnalysis(r,trendDir){
 
 // ─── EXPORT XLSX ──────────────────────────────────────────────────────────
 function exportScoringXLSX(rows){
-  const hdr=['#','Клиент','Менеджер','Вероятность %','Выручка ₽','Посл. покупка','Тренд','Топ группа','Следующая покупка'];
+  const hdr=['#','Клиент','Менеджер','Вероятность %','ML Вероятность %','ML Прогноз ₽','Выручка ₽','Посл. покупка','Тренд','Топ группа','Следующая покупка'];
   const data=[hdr,...rows.map((r,i)=>[
     i+1,r.name,r.mgr,pct(r.prob),r.total,r.rec>=0?ML[r.rec]:'—',
     r.tr>0.1?`▲ ${Math.round(r.tr*100)}%`:r.tr<-0.1?`▼ ${Math.round(Math.abs(r.tr)*100)}%`:'→ стабильно',
     r.tg,nextTxt(r.nd)])];
   const ws=XLSX.utils.aoa_to_sheet(data);
-  ws['!cols']=[{wch:4},{wch:40},{wch:22},{wch:14},{wch:14},{wch:12},{wch:12},{wch:28},{wch:16}];
+  ws['!cols']=[{wch:4},{wch:40},{wch:22},{wch:14},{wch:16},{wch:14},{wch:14},{wch:12},{wch:12},{wch:28},{wch:16}];
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'ML Скоринг');
   XLSX.writeFile(wb,'ML_Скоринг_'+new Date().toLocaleDateString('ru').replace(/\./g,'-')+'.xlsx');
   toast('✅ Экспорт выполнен','ok');}
